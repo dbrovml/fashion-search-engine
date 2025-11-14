@@ -2,6 +2,7 @@ from itertools import batched
 
 import numpy as np
 from psycopg2.extras import execute_values
+from tqdm import tqdm
 import typer
 
 from src.database.manager import Manager
@@ -135,7 +136,11 @@ def upsert_to_attributes(records, batch_size=32):
     """
 
     with Manager() as db:
-        for chunk in batched(normalized, batch_size):
+        for batch in tqdm(
+            batched(normalized, batch_size),
+            desc="Upserting attributes",
+            total=len(normalized) // batch_size,
+        ):
             values = [
                 (
                     row["sku"],
@@ -152,7 +157,7 @@ def upsert_to_attributes(records, batch_size=32):
                     row["text3"],
                     row["texts"],
                 )
-                for row in chunk
+                for row in batch
             ]
             execute_values(db.cursor, upsert_sql, values)
             db.conn.commit()
@@ -198,7 +203,11 @@ def upsert_to_features(records, batch_size=32):
     """
 
     with Manager() as db:
-        for batch in batched(normalized, batch_size):
+        for batch in tqdm(
+            batched(normalized, batch_size),
+            desc="Upserting features",
+            total=len(normalized) // batch_size,
+        ):
             values = [
                 (
                     row["sku"],
