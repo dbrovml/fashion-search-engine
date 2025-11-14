@@ -186,20 +186,20 @@ def upsert_to_features(records, batch_size=32):
                 "image1": record.get("image1"),
                 "image2": record.get("image2"),
                 "clip_text": record.get("clip_text"),
-                "bert_text": record.get("bert_text"),
+                "st_text": record.get("st_text"),
             }
         )
 
     upsert_sql = """
         INSERT INTO item.features
-        (sku, image1, image2, clip_text, bert_text)
+        (sku, image1, image2, clip_text, st_text)
         VALUES %s
         ON CONFLICT (sku) DO UPDATE SET
             updated = CURRENT_TIMESTAMP,
             image1  = COALESCE(EXCLUDED.image1, item.features.image1),
             image2  = COALESCE(EXCLUDED.image2, item.features.image2),
             clip_text  = COALESCE(EXCLUDED.clip_text, item.features.clip_text),
-            bert_text  = COALESCE(EXCLUDED.bert_text, item.features.bert_text)
+            st_text = COALESCE(EXCLUDED.st_text, item.features.st_text)
     """
 
     with Manager() as db:
@@ -214,7 +214,7 @@ def upsert_to_features(records, batch_size=32):
                     row["image1"],
                     row["image2"],
                     row["clip_text"],
-                    row["bert_text"],
+                    row["st_text"],
                 )
                 for row in batch
             ]
