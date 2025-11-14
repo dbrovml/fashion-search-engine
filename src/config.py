@@ -12,7 +12,18 @@ SCRIPTS_DIR = PROJECT_ROOT / "scripts"
 DOCKER_DIR = PROJECT_ROOT / "docker"
 DATA_DIR = PROJECT_ROOT / "data"
 
-for dir_ in [SRC_DIR, FRONTEND_DIR, SCRIPTS_DIR, DOCKER_DIR, DATA_DIR]:
+ATTRIBUTE_DIR = DATA_DIR / "attributes"
+IMAGE_DIR = DATA_DIR / "images"
+
+for dir_ in [
+    SRC_DIR,
+    FRONTEND_DIR,
+    SCRIPTS_DIR,
+    DOCKER_DIR,
+    DATA_DIR,
+    ATTRIBUTE_DIR,
+    IMAGE_DIR,
+]:
     dir_.mkdir(parents=True, exist_ok=True)
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
