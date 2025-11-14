@@ -222,5 +222,30 @@ def upsert_to_features(records, batch_size=32):
             db.conn.commit()
 
 
+def upsert_to_colors(records):
+    if not isinstance(records, list):
+        records = [records]
+
+    upsert_sql = """
+        INSERT INTO item.colors
+        (source_color, target_color)
+        VALUES %s
+        ON CONFLICT (source_color) DO UPDATE SET
+            target_color = EXCLUDED.target_color
+    """
+
+    values = [
+        (
+            record["source_color"],
+            record["target_color"],
+        )
+        for record in records
+    ]
+
+    with Manager() as db:
+        execute_values(db.cursor, upsert_sql, values)
+        db.conn.commit()
+
+
 if __name__ == "__main__":
     app()
