@@ -1,1 +1,0 @@
-uv run python -m src.database.schemas init-db
