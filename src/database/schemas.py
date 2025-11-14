@@ -38,7 +38,7 @@ ddl = f"""
         clip_image1     vector(512),
         clip_image2     vector(512),
         clip_text       vector(512),
-        bert_text       vector(384)
+        st_text         vector(384)
     );
 
     CREATE TABLE IF NOT EXISTS item.colors (
@@ -64,9 +64,9 @@ ddl = f"""
     USING ivfflat (clip_text vector_cosine_ops)
     WITH (lists = 50);
 
-    CREATE INDEX IF NOT EXISTS features_idx_bert_text
+    CREATE INDEX IF NOT EXISTS features_idx_st_text
     ON item.features
-    USING ivfflat (bert_text vector_cosine_ops)
+    USING ivfflat (st_text vector_cosine_ops)
     WITH (lists = 50);
 """
 
