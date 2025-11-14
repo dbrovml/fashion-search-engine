@@ -40,6 +40,11 @@ ddl = f"""
         bert_text       vector(384)
     );
 
+    CREATE TABLE IF NOT EXISTS item.colors (
+        source_color    VARCHAR(100),
+        target_color    VARCHAR(100)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_attributes_sku ON item.attributes(sku);
     CREATE INDEX IF NOT EXISTS idx_features_sku ON item.features(sku);
 
