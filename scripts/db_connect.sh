@@ -1,0 +1,1 @@
+docker exec -it fashionsearch-db psql -U postgres -d fashionsearch

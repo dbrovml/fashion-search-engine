@@ -1,0 +1,37 @@
+from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+PROJECT_ROOT = Path(__file__).parent.parent
+
+SRC_DIR = PROJECT_ROOT / "src"
+FRONTEND_DIR = PROJECT_ROOT / "frontend"
+SCRIPTS_DIR = PROJECT_ROOT / "scripts"
+DOCKER_DIR = PROJECT_ROOT / "docker"
+DATA_DIR = PROJECT_ROOT / "data"
+
+for dir_ in [SRC_DIR, FRONTEND_DIR, SCRIPTS_DIR, DOCKER_DIR, DATA_DIR]:
+    dir_.mkdir(parents=True, exist_ok=True)
+
+ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
+
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+POSTGRES_DB_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_S3_BUCKET = os.getenv("AWS_S3_BUCKET")
+
+LAMBDA_SSH_KEY = os.getenv("LAMBDA_SSH_KEY")
+LAMBDA_DIR = os.getenv("LAMBDA_DIR")
+LAMBDA_USER = os.getenv("LAMBDA_USER")
+LAMBDA_HOST = os.getenv("LAMBDA_HOST")
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
