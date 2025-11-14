@@ -20,8 +20,7 @@ ddl = f"""
         brand           VARCHAR(100),
         category        VARCHAR(100),
         price           DECIMAL(9, 2),
-        color_src       VARCHAR(100),
-        color_cls       VARCHAR(100),
+        color           VARCHAR(100),
         url             TEXT,
         image1          TEXT,
         image2          TEXT,
@@ -73,6 +72,15 @@ def init_db():
         for s in statements:
             db.cursor.execute(s)
         db.conn.commit()
+    typer.echo("Database initialized successfully")
+
+
+@app.command("drop-db")
+def drop_db():
+    with Manager() as db:
+        db.cursor.execute("DROP SCHEMA IF EXISTS item CASCADE;")
+        db.conn.commit()
+    typer.echo("Database dropped successfully")
 
 
 @app.command("upsert-attributes")
@@ -89,8 +97,7 @@ def upsert_to_attributes(records, batch_size=32):
                 "brand": record.get("brand"),
                 "category": record.get("category"),
                 "price": record.get("price"),
-                "color_src": record.get("color_src"),
-                "color_cls": record.get("color_cls"),
+                "color": record.get("color"),
                 "url": record.get("url"),
                 "image1": record.get("image1"),
                 "image2": record.get("image2"),
@@ -103,7 +110,7 @@ def upsert_to_attributes(records, batch_size=32):
 
     upsert_sql = """
         INSERT INTO item.attributes
-            (sku, title, brand, category, price, color_src, color_cls,
+            (sku, title, brand, category, price, color,
             url, image1, image2, text1, text2, text3, texts)
         VALUES %s
         ON CONFLICT (sku) DO UPDATE SET
@@ -112,8 +119,7 @@ def upsert_to_attributes(records, batch_size=32):
             brand           = COALESCE(EXCLUDED.brand, item.attributes.brand),
             category        = COALESCE(EXCLUDED.category, item.attributes.category),
             price           = COALESCE(EXCLUDED.price, item.attributes.price),
-            color_src       = COALESCE(EXCLUDED.color_src, item.attributes.color_src),
-            color_cls       = COALESCE(EXCLUDED.color_cls, item.attributes.color_cls),
+            color           = COALESCE(EXCLUDED.color, item.attributes.color),
             url             = COALESCE(EXCLUDED.url, item.attributes.url),
             image1          = COALESCE(EXCLUDED.image1, item.attributes.image1),
             image2          = COALESCE(EXCLUDED.image2, item.attributes.image2),
@@ -132,8 +138,7 @@ def upsert_to_attributes(records, batch_size=32):
                     row["brand"],
                     row["category"],
                     row["price"],
-                    row["color_src"],
-                    row["color_cls"],
+                    row["color"],
                     row["url"],
                     row["image1"],
                     row["image2"],
