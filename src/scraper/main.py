@@ -1,6 +1,7 @@
 from itertools import batched
 import json
 import subprocess
+import time
 
 import requests
 from tqdm import tqdm
@@ -193,6 +194,7 @@ class ItemScraper:
                 response = self.session.get(url, timeout=10)
                 response.raise_for_status()
                 target_path.write_bytes(response.content)
+                time.sleep(0.1)
             except Exception:
                 continue
 
