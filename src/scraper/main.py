@@ -1,12 +1,13 @@
 from itertools import batched
 import json
-import time
+import subprocess
 
 import requests
 from tqdm import tqdm
 import typer
 
-from config import ATTRIBUTE_DIR, IMAGE_DIR
+from src.config import ATTRIBUTE_DIR, AWS_S3_BUCKET, IMAGE_DIR
+from src.database.schemas import upsert_to_attributes
 
 app = typer.Typer()
 
@@ -47,8 +48,6 @@ class Config:
         "womens-shoes-sandals",
         "womens-sports-shoes",
     ]
-    max_pages = None
-    batch_size = 16
 
 
 def get_session():
@@ -58,15 +57,15 @@ def get_session():
 
 
 class ListScraper:
+
     def __init__(self, config=Config):
         self.config = config
         self.session = get_session()
 
-    def fetch_catalog(self, category):
+    def scrape_catalog(self, category, max_pages=None):
         category_id = f"ern:collection:cat:categ:{category}"
         item_list = []
         start_cursor = None
-        max_pages = self.config.max_pages
 
         while True:
             payload = [
@@ -120,6 +119,7 @@ class ListScraper:
 
 
 class ItemScraper:
+
     def __init__(self, config=Config):
         self.config = config
         self.session = get_session()
@@ -146,7 +146,7 @@ class ItemScraper:
             )
         return payload
 
-    def _fetch_batch(self, batch):
+    def _scrape_batch(self, batch):
         payload = self._make_payload(batch)
         response = self.session.post(
             self.config.url, data=json.dumps(payload), timeout=10
@@ -161,65 +161,40 @@ class ItemScraper:
                 parsed_items.append(parsed_item)
         return parsed_items
 
-    def fetch_items(self, items_list):
-        batch_size = self.config.batch_size
-
-        if not items_list:
-            return
-
+    def scrape_items(self, items_list, batch_size=16):
         for batch in tqdm(
             batched(items_list, batch_size),
-            desc="Scraping item attributes",
             total=len(items_list) // batch_size,
         ):
-            parsed_items = self._fetch_batch(tuple(batch))
+            parsed_items = self._scrape_batch(tuple(batch))
             for parsed_item in parsed_items:
                 sku = parsed_item.get("sku")
-                if not sku:
-                    continue
+                attribute_path = self.attribute_dir / f"{sku}.json"
+                attribute_path.parent.mkdir(parents=True, exist_ok=True)
+                attribute_path.write_text(
+                    json.dumps(parsed_item, indent=2, sort_keys=True)
+                )
+                self.scrape_item_images(parsed_item)
 
-                metadata_path = self._metadata_path(sku)
-                if metadata_path.exists():
-                    self._save_images(sku, parsed_item)
-                else:
-                    self._persist_item(parsed_item)
-
-    def _metadata_path(self, sku):
-        return self.attribute_dir / f"{sku}.json"
-
-    def _persist_item(self, item):
-        sku = item["sku"]
-        metadata_path = self._metadata_path(sku)
-        metadata_path.parent.mkdir(parents=True, exist_ok=True)
-        metadata = {k: v for k, v in item.items() if k not in {"image1", "image2"}}
-        metadata["images"] = {
-            "image1": item.get("image1"),
-            "image2": item.get("image2"),
-        }
-        metadata_path.write_text(json.dumps(metadata, indent=2, sort_keys=True))
-        self._save_images(sku, item)
-
-    def _save_images(self, sku, item):
+    def scrape_item_images(self, parsed_item):
+        sku = parsed_item.get("sku")
         sku_dir = self.image_dir / sku
         sku_dir.mkdir(parents=True, exist_ok=True)
 
-        for idx, key in enumerate(("image1", "image2"), start=1):
-            url = item.get(key)
+        for idx, url in enumerate(
+            [parsed_item.get("image1"), parsed_item.get("image2")], start=1
+        ):
             if not url:
                 continue
             target_path = sku_dir / f"image{idx}.jpeg"
             if target_path.exists():
                 continue
             try:
-                content = self._download_image(url)
+                response = self.session.get(url, timeout=10)
+                response.raise_for_status()
+                target_path.write_bytes(response.content)
             except Exception:
                 continue
-            target_path.write_bytes(content)
-
-    def _download_image(self, url):
-        response = self.session.get(url, timeout=10)
-        response.raise_for_status()
-        return response.content
 
     def _build_texts(self, record):
         meta_free = (
@@ -243,20 +218,9 @@ class ItemScraper:
         texts = f"{meta_free} {free_text} {meta_keys}".strip()
         return texts
 
-    def _clean_text(self, text):
-        if text:
-            return (
-                text.replace("/", " ")
-                .replace(";", " ")
-                .replace(":", " ")
-                .replace("(", " ")
-                .replace(")", " ")
-            )
-        return None
-
-    def parse_item(self, raw_data):
+    def parse_item(self, raw_item):
         try:
-            product = raw_data["data"]["product"]
+            product = raw_item["data"]["product"]
 
             price = product.get("displayPrice", {}).get("trackingCurrentAmount")
 
@@ -329,16 +293,47 @@ class ItemScraper:
         except Exception:
             return None
 
+    def _clean_text(self, text):
+        if text:
+            return (
+                text.replace("/", " ")
+                .replace(";", " ")
+                .replace(":", " ")
+                .replace("(", " ")
+                .replace(")", " ")
+            )
+        return None
 
-def load_attribute_records():
+
+@app.command("pull")
+def pull(max_pages: int = typer.Option(None)):
+    list_scraper = ListScraper()
+    item_scraper = ItemScraper()
+
+    for category in Config.categories:
+        typer.echo(f"Scraping category: {category}")
+        item_list = list_scraper.scrape_catalog(category, max_pages)
+        item_scraper.scrape_items(item_list)
+
+
+@app.command("push")
+def push():
     records = []
     for path in ATTRIBUTE_DIR.glob("*.json"):
-        try:
-            payload = json.loads(path.read_text())
-        except Exception:
-            continue
-        records.append(payload)
-    return records
+        records.append(json.loads(path.read_text()))
+
+    upsert_to_attributes(records)
+
+    s3_path = f"s3://{AWS_S3_BUCKET}/images/"
+    subprocess.run(
+        [
+            "aws",
+            "s3",
+            "sync",
+            str(IMAGE_DIR),
+            s3_path,
+        ]
+    )
 
 
 if __name__ == "__main__":
