@@ -3,6 +3,7 @@ import json
 import subprocess
 import time
 
+from joblib import Parallel, delayed
 import requests
 from tqdm import tqdm
 import typer
@@ -175,7 +176,11 @@ class ItemScraper:
                 attribute_path.write_text(
                     json.dumps(parsed_item, indent=2, sort_keys=True)
                 )
-                self.scrape_item_images(parsed_item)
+
+            Parallel(n_jobs=8, backend="threading")(
+                delayed(self.scrape_item_images)(parsed_item)
+                for parsed_item in parsed_items
+            )
 
     def scrape_item_images(self, parsed_item):
         sku = parsed_item.get("sku")
