@@ -67,6 +67,8 @@ corpus_features = clip_embedder.encode_texts(corpus_color_queries)
 
 @app.command("embed")
 def embed():
+    typer.echo("Embedding colors")
+
     with Manager() as db:
         sql = """SELECT DISTINCT color FROM item.attributes;"""
         db.cursor.execute(sql)
@@ -93,6 +95,8 @@ def embed():
         }
         for source_color, target_color in matches.items()
     ]
+
+    typer.echo(f"Upserting colors")
     upsert_to_colors(payload)
 
 

@@ -14,6 +14,8 @@ st_embedder = get_st_embedder()
 
 @app.command("embed")
 def embed(batch_size: int = 128):
+    typer.echo("Embedding items")
+
     with Manager() as db:
         db.cursor.execute(
             """
