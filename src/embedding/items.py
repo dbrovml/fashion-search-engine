@@ -28,7 +28,6 @@ def embed(batch_size: int = 128):
                         OR F.clip_text IS NULL
                         OR F.st_text IS NULL
                     )
-                LIMIT 10
                 ;
             """
         )
