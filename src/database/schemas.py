@@ -42,8 +42,8 @@ ddl = f"""
     );
 
     CREATE TABLE IF NOT EXISTS item.colors (
-        source_color    VARCHAR(100),
-        target_color    VARCHAR(100)
+        source_color    VARCHAR(100) PRIMARY KEY,
+        target_color     VARCHAR(100)
     );
 
     CREATE INDEX IF NOT EXISTS idx_attributes_sku ON item.attributes(sku);
@@ -89,7 +89,6 @@ def drop_db():
     typer.echo("Database dropped successfully")
 
 
-@app.command("upsert-attributes")
 def upsert_to_attributes(records, batch_size=32):
     if not isinstance(records, list):
         records = [records]
@@ -163,7 +162,6 @@ def upsert_to_attributes(records, batch_size=32):
             db.conn.commit()
 
 
-@app.command("upsert-features")
 def upsert_to_features(records, batch_size=32):
     if not isinstance(records, list):
         records = [records]
@@ -183,8 +181,8 @@ def upsert_to_features(records, batch_size=32):
         normalized.append(
             {
                 "sku": record["sku"],
-                "image1": record.get("image1"),
-                "image2": record.get("image2"),
+                "clip_image1": record.get("clip_image1"),
+                "clip_image2": record.get("clip_image2"),
                 "clip_text": record.get("clip_text"),
                 "st_text": record.get("st_text"),
             }
@@ -192,12 +190,12 @@ def upsert_to_features(records, batch_size=32):
 
     upsert_sql = """
         INSERT INTO item.features
-        (sku, image1, image2, clip_text, st_text)
+        (sku, clip_image1, clip_image2, clip_text, st_text)
         VALUES %s
         ON CONFLICT (sku) DO UPDATE SET
             updated = CURRENT_TIMESTAMP,
-            image1  = COALESCE(EXCLUDED.image1, item.features.image1),
-            image2  = COALESCE(EXCLUDED.image2, item.features.image2),
+            clip_image1  = COALESCE(EXCLUDED.clip_image1, item.features.clip_image1),
+            clip_image2  = COALESCE(EXCLUDED.clip_image2, item.features.clip_image2),
             clip_text  = COALESCE(EXCLUDED.clip_text, item.features.clip_text),
             st_text = COALESCE(EXCLUDED.st_text, item.features.st_text)
     """
@@ -211,8 +209,8 @@ def upsert_to_features(records, batch_size=32):
             values = [
                 (
                     row["sku"],
-                    row["image1"],
-                    row["image2"],
+                    row["clip_image1"],
+                    row["clip_image2"],
                     row["clip_text"],
                     row["st_text"],
                 )
