@@ -9,11 +9,11 @@ dependencies = [
     "psycopg2-binary>=2.9.11",
     "python-dotenv>=1.2.1",
     "requests>=2.32.5",
-    "boto3>=1.40.71",
     "typer>=0.20.0",
     "torch>=2.9.0",
     "torchvision>=0.24.0",
     "open-clip-torch>=3.2.0",
     "tqdm>=4.67.1",
     "sentence-transformers>=5.1.2",
+    "joblib>=1.5.2",
 ]

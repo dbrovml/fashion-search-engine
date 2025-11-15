@@ -1,6 +1,5 @@
 from itertools import batched
 import json
-import subprocess
 import time
 
 from joblib import Parallel, delayed
@@ -330,17 +329,6 @@ def push():
         records.append(json.loads(path.read_text()))
 
     upsert_to_attributes(records)
-
-    s3_path = f"s3://{AWS_S3_BUCKET}/images/"
-    subprocess.run(
-        [
-            "aws",
-            "s3",
-            "sync",
-            str(IMAGE_DIR),
-            s3_path,
-        ]
-    )
 
 
 if __name__ == "__main__":
