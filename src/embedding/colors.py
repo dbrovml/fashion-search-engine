@@ -2,6 +2,7 @@ import numpy as np
 import typer
 
 from src.database.manager import Manager
+from src.database.schemas import upsert_to_colors
 from src.embedding.clip import get_clip_embedder
 
 app = typer.Typer()
@@ -64,8 +65,8 @@ for color in CORPUS_COLORS:
 corpus_features = clip_embedder.encode_texts(corpus_color_queries)
 
 
-def embed_corpus_colors():
-
+@app.command("embed")
+def embed():
     with Manager() as db:
         sql = """SELECT DISTINCT color FROM item.attributes;"""
         db.cursor.execute(sql)
@@ -85,7 +86,14 @@ def embed_corpus_colors():
         best_idx = np.argmax(similarity_matrix[:, i])
         matches[query_color] = CORPUS_COLORS[best_idx]
 
-    return matches
+    payload = [
+        {
+            "source_color": source_color,
+            "target_color": target_color,
+        }
+        for source_color, target_color in matches.items()
+    ]
+    upsert_to_colors(payload)
 
 
 def zero_shot_color(color):
@@ -94,3 +102,7 @@ def zero_shot_color(color):
     similarity_matrix = np.dot(corpus_features, query_features.T)
     best_idx = np.argmax(similarity_matrix)
     return color, CORPUS_COLORS[best_idx]
+
+
+if __name__ == "__main__":
+    app()

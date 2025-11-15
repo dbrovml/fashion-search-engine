@@ -1,13 +1,12 @@
+import typer
+
+from src.config import IMAGE_DIR
+from src.database.manager import Manager
+from src.database.schemas import upsert_to_features
 from src.embedding.clip import get_clip_embedder
 from src.embedding.st import get_st_embedder
 
-from src.config import IMAGE_DIR
-import typer
-from src.database.schemas import upsert_to_features
-from src.database.manager import Manager
-
 app = typer.Typer()
-
 
 clip_embedder = get_clip_embedder()
 st_embedder = get_st_embedder()
@@ -15,7 +14,6 @@ st_embedder = get_st_embedder()
 
 @app.command("embed")
 def embed(batch_size: int = 128):
-
     with Manager() as db:
         db.cursor.execute(
             """
@@ -25,11 +23,12 @@ def embed(batch_size: int = 128):
                     ON F.sku = A.sku
                 WHERE 1=1
                     AND (
-                        F.image1 IS NULL
-                        OR F.image2 IS NULL
+                        F.clip_image1 IS NULL
+                        OR F.clip_image2 IS NULL
                         OR F.clip_text IS NULL
                         OR F.st_text IS NULL
                     )
+                LIMIT 10
                 ;
             """
         )
@@ -73,9 +72,6 @@ def embed(batch_size: int = 128):
     payload = list(sku_payload.values())
     upsert_to_features(payload)
 
-    with Manager() as db:
-        db.cursor.execute("""SELECT DISTINCT color FROM item.attributes;""")
-        records = db.cursor.fetchall()
 
-    colors = [record["color"] for record in records]
-    color_vectors = clip_embedder.encode_texts(colors, batch_size)
+if __name__ == "__main__":
+    app()
