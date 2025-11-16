@@ -1,0 +1,91 @@
+from openai import OpenAI
+from pydantic import BaseModel, Field
+from typing import Optional
+
+from src.config import OPENAI_API_KEY, OPENAI_MODEL
+from src.database.manager import Manager
+
+
+class Filters(BaseModel):
+    brand: Optional[str] = Field(None, description="The brand of the piece of clothing")
+    category: Optional[str] = Field(
+        None, description="The category of the piece of clothing"
+    )
+    color: Optional[str] = Field(None, description="The color of the piece of clothing")
+    min_price: Optional[float] = Field(
+        None, description="The minimum price of the piece of clothing"
+    )
+    max_price: Optional[float] = Field(
+        None, description="The maximum price of the piece of clothing"
+    )
+
+
+class Extractor:
+
+    def __init__(self):
+        self.client = OpenAI(api_key=OPENAI_API_KEY)
+
+    def __call__(self, text: str) -> Filters:
+        return self.client.responses.parse(
+            model=OPENAI_MODEL,
+            input=[
+                {"role": "system", "content": self._get_system_prompt()},
+                {"role": "user", "content": text},
+            ],
+            text_format=Filters,
+        ).output_parsed
+
+    def _get_system_prompt(self):
+
+        with Manager() as db:
+            db.cursor.execute("SELECT DISTINCT category FROM item.attributes")
+            categories = db.cursor.fetchall()
+            db.cursor.execute("SELECT DISTINCT target_color FROM item.colors")
+            colors = db.cursor.fetchall()
+            db.cursor.execute("SELECT DISTINCT brand FROM item.attributes")
+            brands = db.cursor.fetchall()
+
+        return f"""
+            You are a filter extraction and normalization specialist for fashion search.
+            Extract structured filters from user messages and MATCH them to available database values.
+
+            Available filter values in database:
+            **Available categories:**
+            {categories}
+            **Available colors:**
+            {colors}
+            **Available brands:**
+            {brands}
+
+            Filter types to extract and normalize (all values are case insensitive):
+            **category**: extract category name and match to available categories list above
+            - Handle plurals: "shoe" -> "shoes"
+            - Must match exactly to a value in the available categories list
+            - If no good match found, return None
+
+            **brand**: extract brand name and match to available brands list above
+            Match priority (in order):
+                - Exact match: "nike" -> "Nike" or "nike"
+                - Starts with extracted name: "ralph lauren" -> "Ralph Lauren Polo"
+                - Contains extracted name as main part (fallback)
+            - Prefer shorter brand names (main brand over sub-brand)
+            - Must match to a value in the available brands list
+            - If no good match found, return None
+
+            **color**: extract color name and match to available colors list above
+            - Handle degree modifiers: "reddish" -> "red"
+            - Prefer dominant color: "reddish orange" -> "orange"
+            - Must match exactly to a value in the available colors list
+            - If no good match found, return None
+
+            **price**: extract price ranges, no normalization needed, return numeric values
+            - Currency is always GPB. "Pounds" can be ignored.
+            - "Under 50" -> max_price: 50
+            - "Over 100" -> min_price: 100
+            - "Between 50 and 100" -> min_price: 50, max_price: 100
+            - "50 to 100" -> min_price: 50, max_price: 100
+        
+            **GENERAL RULES**:
+            - Match extracted values to available values list (case-insensitive, handle variations)
+            - Return null if no good match found in available values
+        """

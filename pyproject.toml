@@ -16,4 +16,6 @@ dependencies = [
     "tqdm>=4.67.1",
     "sentence-transformers>=5.1.2",
     "joblib>=1.5.2",
+    "pydantic>=2.12.4",
+    "openai>=2.8.0",
 ]
