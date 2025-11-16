@@ -21,7 +21,7 @@ class Engine:
                 clauses.append("A.category = %s")
                 params.append(filters["category"])
             if filters.get("color") is not None:
-                target_color = zero_shot_color(filters["color"])[1]
+                target_color = filters["color"]
                 clauses.append("C.target_color = %s")
                 params.append(target_color)
             if filters.get("min_price") is not None:
