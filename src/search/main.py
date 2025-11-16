@@ -1,6 +1,5 @@
 from src.database.manager import Manager
 from src.embedding.clip import get_clip_embedder
-from src.embedding.colors import zero_shot_color
 from src.embedding.st import get_st_embedder
 
 
