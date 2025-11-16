@@ -12,6 +12,9 @@ class Filters(BaseModel):
         None, description="The category of the piece of clothing"
     )
     color: Optional[str] = Field(None, description="The color of the piece of clothing")
+    clean_query: str = Field(
+        None, description="The clean query without price filters and ranges"
+    )
     min_price: Optional[float] = Field(
         None, description="The minimum price of the piece of clothing"
     )
@@ -84,8 +87,15 @@ class Extractor:
             - "Over 100" -> min_price: 100
             - "Between 50 and 100" -> min_price: 50, max_price: 100
             - "50 to 100" -> min_price: 50, max_price: 100
+
+            **clean_query**: original query without price filters and ranges.
+            - Remove price filter requirements from the query
+                - "Velvet pants by Ralph Lauren over 100" -> "Velvet pants by Ralph Lauren"
+                - "Nike shoes under 50" -> "Nike shoes"
+            - If no price filter requirements are present, return the original query
         
             **GENERAL RULES**:
             - Match extracted values to available values list (case-insensitive, handle variations)
             - Return null if no good match found in available values
+            - **IMPORTANT**: always return the clean_query
         """
