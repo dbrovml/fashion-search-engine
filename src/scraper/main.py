@@ -7,7 +7,7 @@ import requests
 from tqdm import tqdm
 import typer
 
-from src.config import ATTRIBUTE_DIR, AWS_S3_BUCKET, IMAGE_DIR
+from src.config import ATTRIBUTE_DIR, IMAGE_DIR
 from src.database.schemas import upsert_to_attributes
 
 app = typer.Typer()
