@@ -8,30 +8,30 @@ class Engine:
     def __init__(self):
         self.clip_embedder = get_clip_embedder()
         self.st_embedder = get_st_embedder()
-    
+
     def parse_filters(self, filters):
         filters_sql, params = "", []
         if filters:
             clauses, params = [], []
-            if filters.get("brand") is not None:
+            if filters.brand is not None:
                 clauses.append("A.brand = %s")
-                params.append(filters["brand"])
-            if filters.get("category") is not None:
+                params.append(filters.brand)
+            if filters.category is not None:
                 clauses.append("A.category = %s")
-                params.append(filters["category"])
-            if filters.get("color") is not None:
-                target_color = filters["color"]
+                params.append(filters.category)
+            if filters.color is not None:
+                target_color = filters.color
                 clauses.append("C.target_color = %s")
                 params.append(target_color)
-            if filters.get("min_price") is not None:
+            if filters.min_price is not None:
                 clauses.append("A.price >= %s")
-                params.append(filters["min_price"])
-            if filters.get("max_price") is not None:
+                params.append(filters.min_price)
+            if filters.max_price is not None:
                 clauses.append("A.price <= %s")
-                params.append(filters["max_price"])
+                params.append(filters.max_price)
             filters_sql = f" AND {' AND '.join(clauses)}" if clauses else ""
         return filters_sql, params
-    
+
     def search_text(self, q_text, k=3, filters=None, clip_weight=0.3, st_weight=0.7):
         clip_emb = self.clip_embedder.encode_texts([q_text])[0]
         clip_v = f"[{','.join(f'{v:.7f}' for v in clip_emb)}]"
@@ -82,12 +82,9 @@ class Engine:
         with Manager() as db:
             db.cursor.execute(search_query, params)
             results = db.cursor.fetchall()
-        
-        return {
-            "results": results,
-            "filters": filters,
-        }
-    
+
+        return results
+
     def search_image(self, image, k=3, filters=None):
         clip_emb = self.clip_embedder.encode_images(image)[0]
         clip_v = f"[{','.join(f'{v:.7f}' for v in clip_emb)}]"
@@ -128,8 +125,5 @@ class Engine:
         with Manager() as db:
             db.cursor.execute(search_query, params)
             results = db.cursor.fetchall()
-        
-        return {
-            "results": results,
-            "filters": filters,
-        }
+
+        return results
