@@ -7,26 +7,27 @@
     {% endif %}
 
     {% if query and not error %}
-        <div class="flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
-            {% if query.get("Query Text") %}
-                <p><span class="font-semibold text-slate-600">Query:</span> {{ query["Query Text"] }}</p>
-            {% endif %}
-            {% if query.get("Query Image") %}
-                <div class="flex items-center gap-2 text-xs text-slate-500">
-                    <span class="font-semibold text-slate-600">Image:</span>
-                    <img
-                        src="{{ query['Query Image'] }}"
-                        alt="Query reference"
-                        class="h-16 w-16 rounded-lg object-cover border border-slate-200"
-                    />
-                </div>
-            {% endif %}
+        <div class="space-y-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
             {% if filters %}
                 <ul class="flex flex-wrap gap-2 text-xs text-slate-500">
                     {% for key, value in filters.items() if value %}
                         <li class="rounded-full border border-slate-200 px-3 py-1">{{ key }}: {{ value }}</li>
                     {% endfor %}
                 </ul>
+            {% endif %}
+            {% if query.get("Query Image") %}
+                <div class="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Query reference</p>
+                    <div class="mt-2 overflow-hidden rounded-xl">
+                        <div class="aspect-[4/3]">
+                            <img
+                                src="{{ query['Query Image'] }}"
+                                alt="Query reference"
+                                class="h-full w-full rounded-xl object-cover"
+                            />
+                        </div>
+                    </div>
+                </div>
             {% endif %}
         </div>
     {% endif %}
