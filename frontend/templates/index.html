@@ -2,84 +2,91 @@
 
 {% block content %}
 <section class="space-y-6">
-    <div class="bg-white shadow-sm border border-slate-200 rounded-2xl p-6">
-        <form
-            id="search-form"
-            hx-post="/search"
-            hx-target="#results-content"
-            hx-swap="innerHTML"
-            hx-indicator="#search-spinner"
-            hx-encoding="multipart/form-data"
-            enctype="multipart/form-data"
-            class="space-y-4"
-        >
-            <div>
-                <label for="q_text" class="block text-sm font-medium text-slate-700">
-                    I'm looking for...
-                </label>
-                <input
-                    type="text"
-                    id="q_text"
-                    name="q_text"
-                    placeholder="e.g. emerald green satin midi dress"
-                    class="mt-2 w-full rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
-                />
-                <p class="mt-2 text-xs text-slate-500">
-                    Tip: combine attributes like shade, fabric, brand, or silhouette to improve your matches.
-                </p>
-            </div>
-            <div class="flex flex-col gap-4 md:flex-row md:items-center">
-                <div class="flex flex-1 flex-col gap-4 md:flex-row md:items-center">
+    <div class="lg:grid lg:grid-cols-[minmax(0,320px)_1fr] lg:items-start lg:gap-8">
+        <div class="space-y-6">
+            <div class="bg-white shadow-sm border border-slate-200 rounded-2xl p-6">
+                <form
+                    id="search-form"
+                    hx-post="/search"
+                    hx-target="#results-content"
+                    hx-swap="innerHTML"
+                    hx-indicator="#search-spinner"
+                    hx-encoding="multipart/form-data"
+                    enctype="multipart/form-data"
+                    class="space-y-4"
+                >
                     <div>
-                        <input
-                            type="file"
-                            id="q_image"
-                            name="q_image"
-                            accept="image/*"
-                            class="sr-only"
-                        />
-                        <label
-                            for="q_image"
-                            class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600 transition hover:border-slate-400 hover:text-slate-900 md:w-auto"
-                        >
-                            Upload reference image
+                        <label for="q_text" class="block text-sm font-medium text-slate-700">
+                            I'm looking for...
                         </label>
-                    </div>
-                    <button
-                        type="submit"
-                        class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white shadow-sm hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
-                    >
-                        <span>Search</span>
-                    </button>
-                </div>
-            </div>
-            <div id="upload-preview" class="hidden rounded-2xl border border-slate-200 bg-white px-3 py-2">
-                <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Selected image</p>
-                <div class="mt-2 overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
-                    <div class="aspect-[4/3]">
-                        <img
-                            id="upload-preview-img"
-                            src=""
-                            alt="Reference preview"
-                            class="h-full w-full object-cover"
+                        <input
+                            type="text"
+                            id="q_text"
+                            name="q_text"
+                            placeholder="e.g. emerald green satin midi dress"
+                            class="mt-2 w-full rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
                         />
+                        <p class="mt-2 text-xs text-slate-500">
+                            Tip: combine attributes like shade, fabric, brand, or silhouette to improve your matches.
+                        </p>
                     </div>
-                </div>
+                    <div class="flex flex-col gap-4 md:flex-row md:items-center">
+                        <div class="flex flex-1 flex-col gap-4 md:flex-row md:items-center">
+                            <div>
+                                <input
+                                    type="file"
+                                    id="q_image"
+                                    name="q_image"
+                                    accept="image/*"
+                                    class="sr-only"
+                                />
+                                <label
+                                    for="q_image"
+                                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600 transition hover:border-slate-400 hover:text-slate-900 md:w-auto"
+                                >
+                                    Upload reference image
+                                </label>
+                            </div>
+                            <button
+                                type="submit"
+                                class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white shadow-sm hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
+                            >
+                                <span>Search</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="upload-preview" class="hidden md:max-w-sm">
+                        <div class="mt-2 rounded-2xl border border-slate-200 bg-white p-3">
+                            <img
+                                id="upload-preview-img"
+                                src=""
+                                alt="Reference preview"
+                                class="w-full rounded-xl object-contain max-h-48"
+                            />
+                        </div>
+                    </div>
+                </form>
             </div>
-        </form>
-    </div>
-
-    <div id="results-container" class="relative">
-        <div id="search-spinner" class="htmx-indicator absolute inset-0 items-center justify-center rounded-2xl bg-white/90 backdrop-blur">
-            <div class="flex items-center gap-3 text-slate-600">
-                <svg class="h-6 w-6 animate-spin text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 010 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"></path>
-                </svg>
-                <span>Fetching looks...</span>
+            <div id="query-panel">
+                {% include "partials/query_panel.html" %}
             </div>
         </div>
-        {% include "partials/results.html" %}
+        <div class="relative">
+            <div id="results-container" class="relative">
+                <div id="search-spinner" class="htmx-indicator absolute inset-0 items-center justify-center rounded-2xl bg-white/90 backdrop-blur">
+                    <div class="flex items-center gap-3 text-slate-600">
+                        <svg class="h-6 w-6 animate-spin text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 010 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"></path>
+                        </svg>
+                        <span>Fetching looks...</span>
+                    </div>
+                </div>
+                <div id="results-content" class="results-body">
+                    {% include "partials/results.html" %}
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -98,6 +105,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         if (uploadPreviewImg) {
             uploadPreviewImg.removeAttribute("src");
+        }
+        if (imageInput) {
+            imageInput.value = "";
         }
     };
 

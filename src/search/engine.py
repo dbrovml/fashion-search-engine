@@ -8,7 +8,7 @@ class Engine:
         self.extractor = Extractor()
         self.query = Query()
 
-    def run(self, q_text=None, q_image=None, k=3):
+    def run(self, q_text=None, q_image=None, k=9):
         filters = self.extractor(q_text) if q_text else None
         if q_image is not None:
             result_items = self.query.search_image(q_image, k=k, filters=filters)
