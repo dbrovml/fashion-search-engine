@@ -4,7 +4,7 @@ from typing import Optional
 from typing import AsyncGenerator
 
 from PIL import Image
-from fastapi import FastAPI, Request, UploadFile, File, Form
+from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates

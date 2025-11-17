@@ -1,0 +1,77 @@
+<section class="space-y-4">
+    {% if error %}
+        <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {{ error }}
+        </div>
+    {% endif %}
+
+    {% if query and not error %}
+        <div class="flex flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
+            {% if query["Query Text"] %}
+                <p><span class="font-semibold text-slate-600">Query:</span> {{ query["Query Text"] }}</p>
+            {% endif %}
+            {% if filters %}
+                <ul class="flex flex-wrap gap-2 text-xs text-slate-500">
+                    {% for key, value in filters.items() if value %}
+                        <li class="rounded-full border border-slate-200 px-3 py-1">{{ key }}: {{ value }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {% if items %}
+        <div class="grid gap-6 md:grid-cols-2">
+            {% for item in items %}
+                <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div class="aspect-[4/3] bg-slate-100">
+                        <img
+                            src="{{ item['Image URL'] }}"
+                            alt="{{ item['Title'] }}"
+                            class="h-full w-full object-cover"
+                            loading="lazy"
+                        />
+                    </div>
+                    <div class="space-y-4 p-5">
+                        <div>
+                            <a href="{{ item['Product URL'] }}" class="text-lg font-semibold text-slate-900 hover:underline" target="_blank" rel="noopener">
+                                {{ item["Title"] }}
+                            </a>
+                            <p class="text-sm text-slate-500">{{ item["Brand"] }} • {{ item["Category"] }}</p>
+                        </div>
+                        <div class="flex flex-wrap gap-3 text-sm text-slate-600">
+                            <span class="rounded-full border border-slate-200 px-3 py-1">{{ item["Color"] }}</span>
+                            <span class="rounded-full border border-slate-200 px-3 py-1">{{ item["Price"] }}</span>
+                            <span class="rounded-full border border-slate-200 px-3 py-1">SKU {{ item["SKU"] }}</span>
+                        </div>
+                        <div class="grid gap-2 text-xs text-slate-500">
+                            <p class="font-semibold uppercase tracking-wide text-slate-400">Search Scores</p>
+                            <dl class="grid grid-cols-2 gap-2">
+                                {% for label in [
+                                    "Final Score",
+                                    "CLIP Text Score",
+                                    "CLIP Packshot Image Score",
+                                    "CLIP Model Image Score",
+                                    "ST Text Score"
+                                ] %}
+                                    {% if item[label] %}
+                                        <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                                            <dt class="text-[0.65rem] uppercase tracking-wide text-slate-400">{{ label }}</dt>
+                                            <dd class="text-base font-semibold text-slate-800">{{ item[label] }}</dd>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </dl>
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% elif not error %}
+        <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-slate-500">
+            <p class="text-base font-medium">No looks yet.</p>
+            <p class="text-sm">Describe a piece or drop an inspiration photo to explore the gallery.</p>
+        </div>
+    {% endif %}
+</section>
+

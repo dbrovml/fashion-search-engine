@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="space-y-6">
+    <div class="bg-white shadow-sm border border-slate-200 rounded-2xl p-6">
+        <form
+            id="search-form"
+            hx-post="/search"
+            hx-target="#results"
+            hx-swap="innerHTML"
+            hx-indicator="#searching"
+            enctype="multipart/form-data"
+            class="space-y-4"
+        >
+            <div>
+                <label for="q_text" class="block text-sm font-medium text-slate-700">
+                    Describe what you're looking for
+                </label>
+                <input
+                    type="text"
+                    id="q_text"
+                    name="q_text"
+                    placeholder="e.g. emerald green satin midi dress"
+                    class="mt-2 w-full rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
+                />
+            </div>
+            <div class="flex flex-col gap-4 md:flex-row md:items-center">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-slate-700">
+                        Or upload an inspiration image
+                    </label>
+                    <input
+                        type="file"
+                        name="q_image"
+                        accept="image/*"
+                        class="mt-2 block w-full rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
+                    />
+                </div>
+                <div class="flex items-center gap-3">
+                    <button
+                        type="submit"
+                        class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white shadow-sm hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
+                    >
+                        <span>Search</span>
+                        <span id="searching" class="htmx-indicator text-sm opacity-75">Searching...</span>
+                    </button>
+                    <button
+                        type="reset"
+                        class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:border-slate-300 hover:text-slate-900"
+                    >
+                        Reset
+                    </button>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500">
+                Tip: combine attributes like shade, fabric, brand, or silhouette to improve your matches.
+            </p>
+        </form>
+    </div>
+
+    <div id="results">
+        {% include "partials/results.html" %}
+    </div>
+</section>
+{% endblock %}
+
