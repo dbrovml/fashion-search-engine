@@ -1,13 +1,19 @@
-from typing import Optional
+"""Search query helpers for text and image inputs."""
 
+from typing import Any, Optional, Sequence, Tuple
+
+from PIL import Image
 from pydantic import BaseModel
 
 from src.database.manager import Manager
-from src.embedding.clip import get_clip_embedder
-from src.embedding.st import get_st_embedder
+from src.embedding.clip import ClipEmbedder, get_clip_embedder
+from src.embedding.st import STEmbedder, get_st_embedder
+from src.search.filters import Filters
 
 
 class ResultItem(BaseModel):
+    """Pydantic model describing a single search result."""
+
     sku: str
     title: str
     category: str
@@ -25,15 +31,19 @@ class ResultItem(BaseModel):
 
 
 class Query:
+    """Runs vector searches against the corpus."""
 
-    def __init__(self):
-        self.clip_embedder = get_clip_embedder()
-        self.st_embedder = get_st_embedder()
+    def __init__(self) -> None:
+        """Load embedder instances for CLIP and ST."""
+        self.clip_embedder: ClipEmbedder = get_clip_embedder()
+        self.st_embedder: STEmbedder = get_st_embedder()
 
-    def parse_filters(self, filters):
-        filters_sql, params = "", []
+    def parse_filters(self, filters: Optional[Filters]) -> Tuple[str, list[Any]]:
+        """Convert extracted filters into SQL predicate snippets."""
+        filters_sql = ""
+        params: list[Any] = []
         if filters:
-            clauses, params = [], []
+            clauses: list[str] = []
             if filters.brand is not None:
                 clauses.append("A.brand = %s")
                 params.append(filters.brand)
@@ -53,7 +63,15 @@ class Query:
             filters_sql = f" AND {' AND '.join(clauses)}" if clauses else ""
         return filters_sql, params
 
-    def search_text(self, q_text, k=3, filters=None, clip_weight=0.3, st_weight=0.7):
+    def search_text(
+        self,
+        q_text: str,
+        k: int = 3,
+        filters: Optional[Filters] = None,
+        clip_weight: float = 0.3,
+        st_weight: float = 0.7,
+    ) -> list[ResultItem]:
+        """Search catalog items using text embeddings."""
         clip_emb = self.clip_embedder.encode_texts([q_text])[0]
         clip_v = f"[{','.join(f'{v:.7f}' for v in clip_emb)}]"
 
@@ -104,7 +122,7 @@ class Query:
             db.cursor.execute(search_query, params)
             results = db.cursor.fetchall()
 
-        result_items = []
+        result_items: list[ResultItem] = []
         for result in results:
             result_item = ResultItem(
                 sku=result["sku"],
@@ -126,7 +144,13 @@ class Query:
 
         return result_items
 
-    def search_image(self, image, k=3, filters=None):
+    def search_image(
+        self,
+        image: Image.Image | Sequence[Image.Image | str],
+        k: int = 3,
+        filters: Optional[Filters] = None,
+    ) -> list[ResultItem]:
+        """Search catalog items using image embeddings."""
         clip_emb = self.clip_embedder.encode_images(image)[0]
         clip_v = f"[{','.join(f'{v:.7f}' for v in clip_emb)}]"
 
@@ -167,7 +191,7 @@ class Query:
             db.cursor.execute(search_query, params)
             results = db.cursor.fetchall()
 
-        result_items = []
+        result_items: list[ResultItem] = []
         for result in results:
             result_item = ResultItem(
                 sku=result["sku"],

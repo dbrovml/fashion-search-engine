@@ -1,4 +1,5 @@
 #!/bin/bash
+# Sync project files to the lambda host and execute embedding jobs.
 set -e
 source .env
 

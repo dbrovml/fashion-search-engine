@@ -1,4 +1,7 @@
+"""Database schema management and bulk upsert helpers."""
+
 from itertools import batched
+from typing import Any, Sequence
 
 import numpy as np
 from psycopg2.extras import execute_values
@@ -72,7 +75,8 @@ ddl = f"""
 
 
 @app.command("init-db")
-def init_db():
+def init_db() -> None:
+    """Create schemas, tables, and indexes if missing."""
     with Manager() as db:
         statements = [s.strip() for s in ddl.split(";") if s.strip()]
         for s in statements:
@@ -82,14 +86,19 @@ def init_db():
 
 
 @app.command("drop-db")
-def drop_db():
+def drop_db() -> None:
+    """Drop the entire item schema."""
     with Manager() as db:
         db.cursor.execute("DROP SCHEMA IF EXISTS item CASCADE;")
         db.conn.commit()
     typer.echo("Database dropped successfully")
 
 
-def upsert_to_attributes(records, batch_size=32):
+def upsert_to_attributes(
+    records: dict[str, Any] | Sequence[dict[str, Any]],
+    batch_size: int = 32,
+) -> None:
+    """Upsert attribute rows in batches."""
     if not isinstance(records, list):
         records = [records]
 
@@ -162,7 +171,11 @@ def upsert_to_attributes(records, batch_size=32):
             db.conn.commit()
 
 
-def upsert_to_features(records, batch_size=32):
+def upsert_to_features(
+    records: dict[str, Any] | Sequence[dict[str, Any]],
+    batch_size: int = 32,
+) -> None:
+    """Upsert feature vectors in batches."""
     if not isinstance(records, list):
         records = [records]
 
@@ -220,7 +233,8 @@ def upsert_to_features(records, batch_size=32):
             db.conn.commit()
 
 
-def upsert_to_colors(records):
+def upsert_to_colors(records: dict[str, Any] | Sequence[dict[str, Any]]) -> None:
+    """Upsert color mapping rows."""
     if not isinstance(records, list):
         records = [records]
 

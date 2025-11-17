@@ -1,19 +1,24 @@
+"""Embedding pipeline for catalog items."""
+
+from typing import Any
+
 import typer
 
 from src.config import IMAGE_DIR
 from src.database.manager import Manager
 from src.database.schemas import upsert_to_features
-from src.embedding.clip import get_clip_embedder
-from src.embedding.st import get_st_embedder
+from src.embedding.clip import ClipEmbedder, get_clip_embedder
+from src.embedding.st import STEmbedder, get_st_embedder
 
 app = typer.Typer()
 
-clip_embedder = get_clip_embedder()
-st_embedder = get_st_embedder()
+clip_embedder: ClipEmbedder = get_clip_embedder()
+st_embedder: STEmbedder = get_st_embedder()
 
 
 @app.command("embed")
-def embed(batch_size: int = 128):
+def embed(batch_size: int = 128) -> None:
+    """Backfill missing CLIP/ST corpus embeddings for catalog items."""
     typer.echo("Embedding items")
 
     with Manager() as db:
@@ -33,11 +38,13 @@ def embed(batch_size: int = 128):
                 ;
             """
         )
-        records = db.cursor.fetchall()
+        records: list[dict[str, Any]] = db.cursor.fetchall()
 
-    sku_payload = {record["sku"]: {"sku": record["sku"]} for record in records}
+    sku_payload: dict[str, dict[str, Any]] = {
+        record["sku"]: {"sku": record["sku"]} for record in records
+    }
 
-    text_jobs = []
+    text_jobs: list[tuple[str, Any]] = []
     for record in records:
         texts = record.get("texts")
         text_jobs.append((record["sku"], texts))
@@ -52,8 +59,8 @@ def embed(batch_size: int = 128):
     for (sku, _), vector in zip(text_jobs, text_vectors):
         sku_payload[sku]["clip_text"] = vector
 
-    image_keys = []
-    image_paths = []
+    image_keys: list[tuple[str, str]] = []
+    image_paths: list[str] = []
     for record in records:
         sku = record["sku"]
         sku_dir = IMAGE_DIR / sku

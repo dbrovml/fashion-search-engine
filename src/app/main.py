@@ -1,8 +1,9 @@
+"""FastAPI entrypoint for the fashion search application."""
+
 from base64 import b64encode
 from contextlib import asynccontextmanager
 from io import BytesIO
-from typing import Optional
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator, Optional
 
 from PIL import Image
 from fastapi import FastAPI, File, Form, Request, UploadFile
@@ -16,6 +17,7 @@ from src.search.engine import Engine
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Create and store the shared search engine instance."""
     app.state.engine = Engine()
     yield
 
@@ -25,7 +27,8 @@ templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
-def _empty_context():
+def _empty_context() -> dict[str, Any]:
+    """Return the default template context."""
     return {
         "items": [],
         "query": {"Query Text": None, "Query Image": None},
@@ -35,6 +38,7 @@ def _empty_context():
 
 
 def _encode_query_image(image: Image.Image) -> str:
+    """Convert a PIL image into a data URL."""
     buffer = BytesIO()
     image.save(buffer, format="JPEG")
     encoded = b64encode(buffer.getvalue()).decode("utf-8")
@@ -42,7 +46,8 @@ def _encode_query_image(image: Image.Image) -> str:
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
+async def index(request: Request) -> HTMLResponse:
+    """Render the search landing page."""
     context = {"request": request, **_empty_context()}
     return templates.TemplateResponse("index.html", context)
 
@@ -52,7 +57,8 @@ async def search(
     request: Request,
     q_text: Optional[str] = Form(None),
     q_image: Optional[UploadFile] = File(None),
-):
+) -> HTMLResponse:
+    """Process a search submission using text and/or image input."""
     engine: Engine = app.state.engine
     image_data_url: Optional[str] = None
 
@@ -67,7 +73,7 @@ async def search(
             context,
         )
 
-    image = None
+    image: Optional[Image.Image] = None
     if q_image and q_image.filename:
         content = await q_image.read()
         try:

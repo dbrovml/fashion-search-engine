@@ -1,3 +1,5 @@
+"""OpenAI-powered filter extraction and normalization."""
+
 from typing import Optional
 
 from openai import OpenAI
@@ -8,6 +10,8 @@ from src.database.manager import Manager
 
 
 class Filters(BaseModel):
+    """Structured filters for fashion search."""
+
     brand: Optional[str] = Field(None, description="The brand of the piece of clothing")
     category: Optional[str] = Field(
         None, description="The category of the piece of clothing"
@@ -27,9 +31,11 @@ class Filters(BaseModel):
 class Extractor:
 
     def __init__(self):
+        """Initialize the OpenAI client."""
         self.client = OpenAI(api_key=OPENAI_API_KEY)
 
     def __call__(self, text: str) -> Filters:
+        """Extract filters from user input."""
         return self.client.responses.parse(
             model=OPENAI_MODEL,
             input=[
@@ -40,6 +46,7 @@ class Extractor:
         ).output_parsed
 
     def _get_system_prompt(self):
+        """Parse the system prompt for filter extraction."""
 
         with Manager() as db:
             db.cursor.execute("SELECT DISTINCT category FROM item.attributes")

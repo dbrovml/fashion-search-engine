@@ -1,9 +1,13 @@
+"""Zalando product image and metadata scraper."""
+
 from itertools import batched
 import json
 import time
+from typing import Any, Sequence
 
 from joblib import Parallel, delayed
 import requests
+from requests import Session
 from tqdm import tqdm
 import typer
 
@@ -51,19 +55,23 @@ class Config:
     ]
 
 
-def get_session():
+def get_session() -> Session:
+    """Return a configured requests session."""
     session = requests.session()
     session.headers.update(Config.headers)
     return session
 
 
 class ListScraper:
+    """Scrape catalog listing pages."""
 
-    def __init__(self, config=Config):
+    def __init__(self, config: type[Config] = Config) -> None:
+        """Store config object and create session."""
         self.config = config
         self.session = get_session()
 
-    def scrape_catalog(self, category, max_pages=None):
+    def scrape_catalog(self, category: str, max_pages: int | None = None) -> list[str]:
+        """Return item IDs for the given category."""
         category_id = f"ern:collection:cat:categ:{category}"
         item_list = []
         start_cursor = None
@@ -120,15 +128,18 @@ class ListScraper:
 
 
 class ItemScraper:
+    """Scrape individual item metadata and media."""
 
-    def __init__(self, config=Config):
+    def __init__(self, config: type[Config] = Config) -> None:
+        """Prepare session plus storage paths."""
         self.config = config
         self.session = get_session()
         self.attribute_dir = ATTRIBUTE_DIR
         self.image_dir = IMAGE_DIR
 
-    def _make_payload(self, batch):
-        payload = []
+    def _make_payload(self, batch: Sequence[str]) -> list[dict[str, Any]]:
+        """Build the GraphQL payload for a batch of SKUs."""
+        payload: list[dict[str, Any]] = []
         for item in batch:
             payload.append(
                 {
@@ -147,7 +158,8 @@ class ItemScraper:
             )
         return payload
 
-    def _scrape_batch(self, batch):
+    def _scrape_batch(self, batch: Sequence[str]) -> list[dict[str, Any]]:
+        """Execute the batch request and parse results."""
         payload = self._make_payload(batch)
         response = self.session.post(
             self.config.url, data=json.dumps(payload), timeout=10
@@ -155,14 +167,15 @@ class ItemScraper:
         response.raise_for_status()
         data = response.json()
 
-        parsed_items = []
+        parsed_items: list[dict[str, Any]] = []
         for item in data:
             parsed_item = self.parse_item(item)
             if parsed_item:
                 parsed_items.append(parsed_item)
         return parsed_items
 
-    def scrape_items(self, items_list, batch_size=16):
+    def scrape_items(self, items_list: Sequence[str], batch_size: int = 16) -> None:
+        """Scrape item data, persist JSON, and fetch images."""
         for batch in tqdm(
             batched(items_list, batch_size),
             total=len(items_list) // batch_size,
@@ -181,7 +194,8 @@ class ItemScraper:
                 for parsed_item in parsed_items
             )
 
-    def scrape_item_images(self, parsed_item):
+    def scrape_item_images(self, parsed_item: dict[str, Any]) -> None:
+        """Download packshot and model images if missing."""
         sku = parsed_item.get("sku")
         sku_dir = self.image_dir / sku
         sku_dir.mkdir(parents=True, exist_ok=True)
@@ -202,7 +216,8 @@ class ItemScraper:
             except Exception:
                 continue
 
-    def _build_texts(self, record):
+    def _build_texts(self, record: dict[str, Any]) -> str:
+        """Assemble the combined text blob for embeddings."""
         meta_free = (
             f"A {record.get('color')} {record.get('category') or ''} "
             f"from {record.get('brand') or ''}. "
@@ -221,10 +236,11 @@ class ItemScraper:
                 free_text = value
                 break
 
-        texts = f"{meta_free} {free_text} {meta_keys}".strip()
+        texts = f"{meta_free} {free_text or ''} {meta_keys}".strip()
         return texts
 
-    def parse_item(self, raw_item):
+    def parse_item(self, raw_item: dict[str, Any]) -> dict[str, Any] | None:
+        """Normalize a raw GraphQL response into our schema."""
         try:
             product = raw_item["data"]["product"]
 
@@ -299,7 +315,8 @@ class ItemScraper:
         except Exception:
             return None
 
-    def _clean_text(self, text):
+    def _clean_text(self, text: str | None) -> str | None:
+        """Remove punctuation separators from alt text."""
         if text:
             return (
                 text.replace("/", " ")
@@ -312,7 +329,8 @@ class ItemScraper:
 
 
 @app.command("pull")
-def pull(max_pages: int = typer.Option(None)):
+def pull(max_pages: int | None = typer.Option(None)) -> None:
+    """Scrape remote catalog data and store it locally."""
     list_scraper = ListScraper()
     item_scraper = ItemScraper()
 
@@ -323,8 +341,9 @@ def pull(max_pages: int = typer.Option(None)):
 
 
 @app.command("push")
-def push():
-    records = []
+def push() -> None:
+    """Push locally scraped attributes into the database."""
+    records: list[dict[str, Any]] = []
     for path in ATTRIBUTE_DIR.glob("*.json"):
         records.append(json.loads(path.read_text()))
 

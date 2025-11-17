@@ -1,15 +1,26 @@
-from sentence_transformers import SentenceTransformer
+"""Sentence Transformer wrapper for normalized text embeddings."""
 
+from typing import Sequence
+
+import numpy as np
+from sentence_transformers import SentenceTransformer
 
 from src.config import ST_MODEL_NAME
 
 
 class STEmbedder:
+    """Encapsulates a SentenceTransformer encoder."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Load the configured SentenceTransformer model."""
         self.model = SentenceTransformer(ST_MODEL_NAME)
 
-    def encode_texts(self, texts, batch_size=32):
+    def encode_texts(
+        self,
+        texts: str | Sequence[str],
+        batch_size: int = 32,
+    ) -> np.ndarray:
+        """Encode text inputs into normalized embeddings."""
         if isinstance(texts, str):
             texts = [texts]
 
@@ -21,5 +32,6 @@ class STEmbedder:
         )
 
 
-def get_st_embedder():
+def get_st_embedder() -> STEmbedder:
+    """Instantiate an STEmbedder with default config."""
     return STEmbedder()

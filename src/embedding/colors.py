@@ -1,13 +1,17 @@
+"""Color standardization utils using CLIP embeddings."""
+
+from typing import Sequence
+
 import numpy as np
 import typer
 
 from src.database.manager import Manager
 from src.database.schemas import upsert_to_colors
-from src.embedding.clip import get_clip_embedder
+from src.embedding.clip import ClipEmbedder, get_clip_embedder
 
 app = typer.Typer()
 
-clip_embedder = get_clip_embedder()
+clip_embedder: ClipEmbedder = get_clip_embedder()
 
 CORPUS_COLORS = [
     # Neutrals
@@ -58,15 +62,15 @@ CORPUS_COLORS = [
     "multicolor",
 ]
 
-corpus_color_queries = []
-for color in CORPUS_COLORS:
-    query = f"A piece of clothing in {color} color."
-    corpus_color_queries.append(query)
+corpus_color_queries: list[str] = [
+    f"A piece of clothing in {color} color." for color in CORPUS_COLORS
+]
 corpus_features = clip_embedder.encode_texts(corpus_color_queries)
 
 
 @app.command("embed")
-def embed():
+def embed() -> None:
+    """Calculate database color embeddings and store mappings."""
     typer.echo("Embedding colors")
 
     with Manager() as db:
@@ -74,16 +78,15 @@ def embed():
         db.cursor.execute(sql)
         records = db.cursor.fetchall()
 
-    query_colors = [record["color"] for record in records]
-    query_color_queries = []
-    for color in query_colors:
-        query = f"A piece of clothing in {color} color."
-        query_color_queries.append(query)
+    query_colors: list[str] = [record["color"] for record in records]
+    query_color_queries = [
+        f"A piece of clothing in {color} color." for color in query_colors
+    ]
 
     query_features = clip_embedder.encode_texts(query_color_queries)
     similarity_matrix = np.dot(corpus_features, query_features.T)
 
-    matches = {}
+    matches: dict[str, str] = {}
     for i, query_color in enumerate(query_colors):
         best_idx = np.argmax(similarity_matrix[:, i])
         matches[query_color] = CORPUS_COLORS[best_idx]
@@ -96,11 +99,12 @@ def embed():
         for source_color, target_color in matches.items()
     ]
 
-    typer.echo(f"Upserting colors")
+    typer.echo("Upserting colors")
     upsert_to_colors(payload)
 
 
-def zero_shot_color(color):
+def zero_shot_color(color: str) -> tuple[str, str]:
+    """Return the corpus color that best matches the query color."""
     query = f"A piece of clothing in {color} color."
     query_features = clip_embedder.encode_texts([query])[0]
     similarity_matrix = np.dot(corpus_features, query_features.T)
