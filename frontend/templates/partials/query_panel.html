@@ -1,5 +1,21 @@
-{% if query and not error and (filters or query.get("Query Image")) %}
+{% if query and not error and (filters or query.get("Query Image") or query.get("Style Query") or query.get("Style Query")) %}
     <div class="space-y-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
+        {% if query.get("Style Query") or query.get("Style Query") %}
+            <div class="space-y-2">
+                {% if query.get("Style Query") %}
+                    <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">Style Query</p>
+                        <p class="text-sm text-slate-700">{{ query["Style Query"] }}</p>
+                    </div>
+                {% endif %}
+                {% if query.get("Style Query") %}
+                    <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">Style Query</p>
+                        <p class="text-sm text-slate-700">{{ query["Style Query"] }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
         {% if filters %}
             <ul class="flex flex-wrap gap-2 text-xs text-slate-500">
                 {% for key, value in filters.items() if value %}

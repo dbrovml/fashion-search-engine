@@ -68,8 +68,8 @@ class Query:
         q_text: str,
         k: int = 3,
         filters: Optional[Filters] = None,
-        clip_weight: float = 0.3,
-        st_weight: float = 0.7,
+        clip_weight: float = 0.15,
+        st_weight: float = 0.85,
     ) -> list[ResultItem]:
         """Search catalog items using text embeddings."""
         clip_emb = self.clip_embedder.encode_texts([q_text])[0]

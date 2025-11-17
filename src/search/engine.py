@@ -26,7 +26,7 @@ class Engine:
             result_items = self.query.search_image(q_image, k=k, filters=filters)
         else:
             result_items = self.query.search_text(
-                filters.clean_query if filters else q_text,
+                filters.style_query if filters else q_text,
                 k=k,
                 filters=filters,
             )
@@ -78,10 +78,13 @@ class Engine:
         """Format extracted filters for display."""
         if not filters:
             return None
-        return {
+        formatted = {
             "Min Price": filters.min_price,
             "Max Price": filters.max_price,
             "Brand": filters.brand,
             "Category": filters.category,
             "Color": filters.color,
         }
+        if filters.style_query:
+            formatted["Clean Query"] = filters.style_query
+        return formatted

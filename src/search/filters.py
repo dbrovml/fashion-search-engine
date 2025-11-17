@@ -12,6 +12,10 @@ from src.database.manager import Manager
 class Filters(BaseModel):
     """Structured filters for fashion search."""
 
+    style_query: str = Field(
+        None,
+        description="The style query with pattern / material / style / texture / silhouette tokens",
+    )
     brand: Optional[str] = Field(None, description="The brand of the piece of clothing")
     category: Optional[str] = Field(
         None, description="The category of the piece of clothing"
@@ -101,9 +105,22 @@ class Extractor:
                 - "Velvet pants by Ralph Lauren over 100" -> "Velvet pants by Ralph Lauren"
                 - "Nike shoes under 50" -> "Nike shoes"
             - If no price filter requirements are present, return the original query
-        
+
+            **style_query**: remove price, category, and brand tokens from the query
+            - Examples:
+                - "Funky pants" -> "funky"
+                - "Leather striped jacket" -> "leather striped"
+                - "Short velvet dress by Ralph Lauren" -> "short velvet"
+                - "Pink short-sleeved blouse by DKNY over 100" -> "short-sleeved"
+                - "Off-shoulder blouse" -> "off-shoulder"
+                - "Emerald floral mini dress" -> "floral mini"
+                - "Denim pants with a zipper" -> "denim with a zipper"
+                - "Striped pants by Tommy Hilfiger" -> "striped"
+                - "Dress with polka dots" -> "polka dots"
+    
             **GENERAL RULES**:
             - Match extracted values to available values list (case-insensitive, handle variations)
             - Return null if no good match found in available values
             - **IMPORTANT**: always return the clean_query
+            - **IMPORTANT**: always return the style_query
         """
