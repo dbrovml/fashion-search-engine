@@ -3,7 +3,7 @@
 from typing import Any, Iterable
 
 from src.search.filters import Extractor, Filters
-from src.search.query import Query, SearchResult
+from src.search.query import Query, ResultItem
 
 
 class Engine:
@@ -36,7 +36,7 @@ class Engine:
             "Query": self._format_query(q_text, q_image),
         }
 
-    def _format_items(self, items: Iterable[SearchResult]) -> list[dict[str, Any]]:
+    def _format_items(self, items: Iterable[ResultItem]) -> list[dict[str, Any]]:
         """Transform raw search results into template-ready dicts."""
         formatted_items = []
         for item in items:
