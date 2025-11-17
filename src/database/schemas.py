@@ -195,7 +195,6 @@ def upsert_to_features(
     """
 
     with Manager() as db:
-        # Optimize for bulk operations
         db.cursor.execute("SET work_mem = '256MB'")
         db.cursor.execute("SET maintenance_work_mem = '512MB'")
         db.cursor.execute("SET synchronous_commit = off")
@@ -246,11 +245,9 @@ def upsert_to_features(
 
             execute_values(db.cursor, upsert_sql, values, page_size=batch_size)
 
-            # Commit every N batches or at the end
             if batch_idx % commit_every == 0 or batch_idx == total_batches:
                 db.conn.commit()
 
-        # Restore settings
         db.cursor.execute("SET synchronous_commit = on")
         db.conn.commit()
 
