@@ -59,6 +59,8 @@ class Engine:
         }
 
     def _format_filters(self, filters):
+        if not filters:
+            return None
         return {
             "Min Price": filters.min_price,
             "Max Price": filters.max_price,

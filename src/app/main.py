@@ -1,3 +1,4 @@
+from base64 import b64encode
 from contextlib import asynccontextmanager
 from io import BytesIO
 from typing import Optional
@@ -33,6 +34,13 @@ def _empty_context():
     }
 
 
+def _encode_query_image(image: Image.Image) -> str:
+    buffer = BytesIO()
+    image.save(buffer, format="JPEG")
+    encoded = b64encode(buffer.getvalue()).decode("utf-8")
+    return f"data:image/jpeg;base64,{encoded}"
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     context = {"request": request, **_empty_context()}
@@ -46,6 +54,7 @@ async def search(
     q_image: Optional[UploadFile] = File(None),
 ):
     engine: Engine = app.state.engine
+    image_data_url: Optional[str] = None
 
     if not q_text and (not q_image or not q_image.filename):
         context = {
@@ -73,12 +82,21 @@ async def search(
                 "partials/results.html",
                 context,
             )
+        image_data_url = _encode_query_image(image)
 
     output = engine.run(q_text=q_text, q_image=image)
+    query_payload = dict(output.get("Query") or {})
+    if "Query Text" not in query_payload:
+        query_payload["Query Text"] = q_text
+    if "Query Image" not in query_payload:
+        query_payload["Query Image"] = None
+    if image_data_url:
+        query_payload["Query Image"] = image_data_url
+
     context = {
         "request": request,
         "items": output.get("Items", []),
-        "query": output.get("Query"),
+        "query": query_payload,
         "filters": output.get("Applied Filters"),
         "error": None,
     }

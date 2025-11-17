@@ -6,15 +6,16 @@
         <form
             id="search-form"
             hx-post="/search"
-            hx-target="#results"
+            hx-target="#results-content"
             hx-swap="innerHTML"
-            hx-indicator="#searching"
+            hx-indicator="#search-spinner"
+            hx-encoding="multipart/form-data"
             enctype="multipart/form-data"
             class="space-y-4"
         >
             <div>
                 <label for="q_text" class="block text-sm font-medium text-slate-700">
-                    Describe what you're looking for
+                    I'm looking for...
                 </label>
                 <input
                     type="text"
@@ -23,18 +24,34 @@
                     placeholder="e.g. emerald green satin midi dress"
                     class="mt-2 w-full rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
                 />
+                <p class="mt-2 text-xs text-slate-500">
+                    Tip: combine attributes like shade, fabric, brand, or silhouette to improve your matches.
+                </p>
             </div>
             <div class="flex flex-col gap-4 md:flex-row md:items-center">
                 <div class="flex-1">
-                    <label class="block text-sm font-medium text-slate-700">
-                        Or upload an inspiration image
-                    </label>
                     <input
                         type="file"
+                        id="q_image"
                         name="q_image"
                         accept="image/*"
-                        class="mt-2 block w-full rounded-xl border-slate-200 focus:border-emerald-500 focus:ring-emerald-500"
+                        class="sr-only"
                     />
+                    <label
+                        for="q_image"
+                        class="mt-1 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600 transition hover:border-slate-400 hover:text-slate-900 md:w-auto"
+                    >
+                        Upload reference image
+                    </label>
+                    <div id="upload-preview" class="mt-3 hidden rounded-xl border border-slate-200 bg-white px-3 py-2">
+                        <p class="text-xs font-medium uppercase tracking-wide text-slate-400">Selected image</p>
+                        <img
+                            id="upload-preview-img"
+                            src=""
+                            alt="Reference preview"
+                            class="mt-2 h-24 w-full rounded-lg object-cover"
+                        />
+                    </div>
                 </div>
                 <div class="flex items-center gap-3">
                     <button
@@ -42,7 +59,6 @@
                         class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 font-semibold text-white shadow-sm hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
                     >
                         <span>Search</span>
-                        <span id="searching" class="htmx-indicator text-sm opacity-75">Searching...</span>
                     </button>
                     <button
                         type="reset"
@@ -52,15 +68,99 @@
                     </button>
                 </div>
             </div>
-            <p class="text-xs text-slate-500">
-                Tip: combine attributes like shade, fabric, brand, or silhouette to improve your matches.
-            </p>
         </form>
     </div>
 
-    <div id="results">
+    <div id="results-container" class="relative">
+        <div id="search-spinner" class="htmx-indicator absolute inset-0 items-center justify-center rounded-2xl bg-white/90 backdrop-blur">
+            <div class="flex items-center gap-3 text-slate-600">
+                <svg class="h-6 w-6 animate-spin text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 010 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"></path>
+                </svg>
+                <span>Fetching looks...</span>
+            </div>
+        </div>
         {% include "partials/results.html" %}
     </div>
 </section>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("q_text");
+    const searchForm = document.getElementById("search-form");
+    const resultsContainer = document.getElementById("results-container");
+    const imageInput = document.getElementById("q_image");
+    const uploadPreview = document.getElementById("upload-preview");
+    const uploadPreviewImg = document.getElementById("upload-preview-img");
+
+    const clearUploadPreview = () => {
+        if (uploadPreview) {
+            uploadPreview.classList.add("hidden");
+        }
+        if (uploadPreviewImg) {
+            uploadPreviewImg.removeAttribute("src");
+        }
+    };
+
+    const showUploadPreview = (dataUrl) => {
+        if (!uploadPreview || !uploadPreviewImg) return;
+        uploadPreviewImg.src = dataUrl;
+        uploadPreview.classList.remove("hidden");
+    };
+
+    if (imageInput) {
+        imageInput.addEventListener("change", (event) => {
+            const file = event.target.files && event.target.files[0];
+            if (!file) {
+                clearUploadPreview();
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (loadEvent) => {
+                if (typeof loadEvent.target?.result === "string") {
+                    showUploadPreview(loadEvent.target.result);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    const setLoadingState = (isLoading) => {
+        if (!resultsContainer) return;
+        resultsContainer.classList.toggle("is-loading", isLoading);
+        if (isLoading) {
+            clearUploadPreview();
+        }
+    };
+
+    document.body.addEventListener("htmx:beforeRequest", function (event) {
+        if (event.target.id === "search-form") {
+            setLoadingState(true);
+        }
+    });
+
+    const clearLoading = function (event) {
+        const target = event.detail ? event.detail.target : null;
+        if (target && target.id === "results-content") {
+            setLoadingState(false);
+        }
+    };
+
+    document.body.addEventListener("htmx:afterSwap", clearLoading);
+    document.body.addEventListener("htmx:responseError", function () {
+        setLoadingState(false);
+    });
+
+    if (!searchInput || !searchForm) return;
+
+    searchInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            searchForm.requestSubmit();
+        }
+    });
+});
+</script>
 {% endblock %}
 

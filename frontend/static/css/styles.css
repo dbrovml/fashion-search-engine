@@ -2,11 +2,30 @@
     font-family: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.htmx-indicator {
-    display: none;
+#results-container {
+    min-height: 200px;
 }
 
-.htmx-request .htmx-indicator {
-    display: inline;
+#search-spinner {
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+#results-container.is-loading #search-spinner {
+    display: flex;
+}
+
+#results-container .results-body {
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease;
+}
+
+#results-container.is-loading .results-body {
+    opacity: 0;
+    transform: translateY(6px);
 }
 
