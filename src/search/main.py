@@ -16,6 +16,7 @@ class ResultItem(BaseModel):
     price: float
     image: str
     text: str
+    url: str
     clip_score: Optional[float]
     st_score: Optional[float]
     clip_score1: Optional[float]
@@ -114,6 +115,7 @@ class Engine:
                 price=result["price"],
                 image=result["image"],
                 text=result["text"],
+                url=result["url"],
                 clip_score=result["clip_score"],
                 st_score=result["st_score"],
                 clip_score1=None,
@@ -176,6 +178,7 @@ class Engine:
                 price=result["price"],
                 image=result["image"],
                 text=result["text"],
+                url=result["url"],
                 clip_score=None,
                 st_score=None,
                 clip_score1=result["clip_score1"],
