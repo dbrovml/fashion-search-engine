@@ -1,11 +1,13 @@
+from typing import Optional
+
+from pydantic import BaseModel
+
 from src.database.manager import Manager
 from src.embedding.clip import get_clip_embedder
 from src.embedding.st import get_st_embedder
 
-from pydantic import BaseModel
 
-
-class TextResultItem(BaseModel):
+class ResultItem(BaseModel):
     sku: str
     title: str
     category: str
@@ -14,22 +16,10 @@ class TextResultItem(BaseModel):
     price: float
     image: str
     text: str
-    clip_score: float
-    st_score: float
-    score: float
-
-
-class ImageResultItem(BaseModel):
-    sku: str
-    title: str
-    category: str
-    color: str
-    brand: str
-    price: float
-    image: str
-    text: str
-    clip_score1: float
-    clip_score2: float
+    clip_score: Optional[float]
+    st_score: Optional[float]
+    clip_score1: Optional[float]
+    clip_score2: Optional[float]
     score: float
 
 
@@ -115,7 +105,7 @@ class Engine:
 
         result_items = []
         for result in results:
-            result_item = TextResultItem(
+            result_item = ResultItem(
                 sku=result["sku"],
                 title=result["title"],
                 category=result["category"],
@@ -126,6 +116,8 @@ class Engine:
                 text=result["text"],
                 clip_score=result["clip_score"],
                 st_score=result["st_score"],
+                clip_score1=None,
+                clip_score2=None,
                 score=result["score"],
             )
             result_items.append(result_item)
@@ -175,7 +167,7 @@ class Engine:
 
         result_items = []
         for result in results:
-            result_item = ImageResultItem(
+            result_item = ResultItem(
                 sku=result["sku"],
                 title=result["title"],
                 category=result["category"],
@@ -184,6 +176,8 @@ class Engine:
                 price=result["price"],
                 image=result["image"],
                 text=result["text"],
+                clip_score=None,
+                st_score=None,
                 clip_score1=result["clip_score1"],
                 clip_score2=result["clip_score2"],
                 score=result["score"],
