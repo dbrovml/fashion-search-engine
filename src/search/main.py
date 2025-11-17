@@ -2,6 +2,36 @@ from src.database.manager import Manager
 from src.embedding.clip import get_clip_embedder
 from src.embedding.st import get_st_embedder
 
+from pydantic import BaseModel
+
+
+class TextResultItem(BaseModel):
+    sku: str
+    title: str
+    category: str
+    color: str
+    brand: str
+    price: float
+    image: str
+    text: str
+    clip_score: float
+    st_score: float
+    score: float
+
+
+class ImageResultItem(BaseModel):
+    sku: str
+    title: str
+    category: str
+    color: str
+    brand: str
+    price: float
+    image: str
+    text: str
+    clip_score1: float
+    clip_score2: float
+    score: float
+
 
 class Engine:
 
@@ -83,7 +113,24 @@ class Engine:
             db.cursor.execute(search_query, params)
             results = db.cursor.fetchall()
 
-        return results
+        result_items = []
+        for result in results:
+            result_item = TextResultItem(
+                sku=result["sku"],
+                title=result["title"],
+                category=result["category"],
+                color=result["color"],
+                brand=result["brand"],
+                price=result["price"],
+                image=result["image"],
+                text=result["text"],
+                clip_score=result["clip_score"],
+                st_score=result["st_score"],
+                score=result["score"],
+            )
+            result_items.append(result_item)
+
+        return result_items
 
     def search_image(self, image, k=3, filters=None):
         clip_emb = self.clip_embedder.encode_images(image)[0]
@@ -126,4 +173,21 @@ class Engine:
             db.cursor.execute(search_query, params)
             results = db.cursor.fetchall()
 
-        return results
+        result_items = []
+        for result in results:
+            result_item = ImageResultItem(
+                sku=result["sku"],
+                title=result["title"],
+                category=result["category"],
+                color=result["color"],
+                brand=result["brand"],
+                price=result["price"],
+                image=result["image"],
+                text=result["text"],
+                clip_score1=result["clip_score1"],
+                clip_score2=result["clip_score2"],
+                score=result["score"],
+            )
+            result_items.append(result_item)
+
+        return result_items
