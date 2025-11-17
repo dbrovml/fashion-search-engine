@@ -8,12 +8,12 @@ from fastapi import FastAPI, Request
 from fastapi.params import File, Form, UploadFile
 from fastapi.responses import HTMLResponse
 
-from src.search.pipeline import Pipeline
+from src.search.engine import Engine
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    app.state.pipeline = Pipeline()
+    app.state.engine = Engine()
     yield
 
 
@@ -26,7 +26,7 @@ def search(
     q_text: Optional[str] = Form(None),
     q_image: Optional[UploadFile] = File(None),
 ):
-    pipeline: Pipeline = app.state.pipeline
+    engine: Engine = app.state.engine
 
     if not q_text and (not q_image or not q_image.filename):
         return {"error": "Query or image is required"}
@@ -39,5 +39,5 @@ def search(
         except Exception as e:
             return {"error": f"Invalid image: {e}"}
 
-    output = pipeline.run(q_text=q_text, q_image=image)
+    output = engine.run(q_text=q_text, q_image=image)
     return output
