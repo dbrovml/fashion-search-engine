@@ -1,14 +1,14 @@
-from src.agents.extractor import Extractor
-from src.search.main import Engine
+from src.search.engine import Engine
+from src.search.filters import Extractor
 
 
-class Orchestrator:
+class Pipeline:
 
     def __init__(self):
         self.extractor = Extractor()
         self.engine = Engine()
 
-    def process_query(self, q_text=None, q_image=None, k=3):
+    def run(self, q_text=None, q_image=None, k=3):
         filters = self.extractor(q_text) if q_text else None
         if q_image is not None:
             result_items = self.engine.search_image(q_image, k=k, filters=filters)

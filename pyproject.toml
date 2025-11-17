@@ -18,4 +18,6 @@ dependencies = [
     "joblib>=1.5.2",
     "pydantic>=2.12.4",
     "openai>=2.8.0",
+    "fastapi>=0.121.2",
+    "uvicorn>=0.38.0",
 ]

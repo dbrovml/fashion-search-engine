@@ -1,6 +1,7 @@
+from typing import Optional
+
 from openai import OpenAI
 from pydantic import BaseModel, Field
-from typing import Optional
 
 from src.config import OPENAI_API_KEY, OPENAI_MODEL
 from src.database.manager import Manager
