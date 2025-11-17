@@ -1,68 +1,70 @@
-{% set is_htmx = request.headers.get("hx-request") %}
-{% if is_htmx %}
-<div hx-swap-oob="true" id="query-panel">
-    {% include "partials/query_panel.html" %}
+<div id="results-content" class="results-body">
+    {% set is_htmx = request.headers.get("hx-request") %}
+    {% if is_htmx %}
+    <div hx-swap-oob="true" id="query-panel">
+        {% include "partials/query_panel.html" %}
+    </div>
+    {% endif %}
+
+    <section class="space-y-4">
+        {% if error %}
+            <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        {% if items %}
+            <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {% for item in items %}
+                    <article class="flex flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                        <div class="relative aspect-[3/4] overflow-hidden border-b border-slate-100 bg-white">
+                            <div class="absolute inset-0 p-4">
+                                <div class="h-full w-full rounded-[24px] bg-slate-50">
+                                    <img
+                                        src="{{ item['Image URL'] }}"
+                                        alt="{{ item['Title'] }}"
+                                        class="h-full w-full rounded-[24px] object-contain"
+                                        loading="lazy"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-1 flex-col gap-3 p-5 text-center">
+                            <p class="text-xs uppercase tracking-wide text-slate-500">
+                                {{ item["Brand"] }} • {{ item["Category"] }}
+                            </p>
+                            <div class="flex flex-wrap justify-center gap-2 text-xs font-medium text-slate-600">
+                                <span class="rounded-full border border-slate-200 px-3 py-1">{{ item["Color"] }}</span>
+                                <span class="rounded-full border border-slate-200 px-3 py-1">{{ item["Price"] }}</span>
+                                <span class="rounded-full border border-slate-200 px-3 py-1">SKU {{ item["SKU"] }}</span>
+                            </div>
+                            <div class="space-y-2 text-xs text-slate-500">
+                                <dl class="grid gap-2">
+                                    {% for label in [
+                                        "Final Score",
+                                        "CLIP Text Score",
+                                        "CLIP Packshot Image Score",
+                                        "CLIP Model Image Score",
+                                        "ST Text Score"
+                                    ] %}
+                                        {% if item[label] %}
+                                            <div class="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                                                <dt class="text-[0.65rem] uppercase tracking-wide text-slate-400">{{ label }}</dt>
+                                                <dd class="text-base font-semibold text-slate-800">{{ item[label] }}</dd>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </dl>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% elif not error %}
+            <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-slate-500">
+                <p class="text-base font-medium">No looks yet.</p>
+                <p class="text-sm">Describe a piece or drop an inspiration photo to explore the gallery.</p>
+            </div>
+        {% endif %}
+    </section>
 </div>
-{% endif %}
-
-<section class="space-y-4">
-    {% if error %}
-        <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            {{ error }}
-        </div>
-    {% endif %}
-
-    {% if items %}
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {% for item in items %}
-                <article class="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div class="flex max-h-56 items-center justify-center overflow-hidden rounded-b-none rounded-t-2xl border-b border-slate-100 bg-slate-50">
-                        <img
-                            src="{{ item['Image URL'] }}"
-                            alt="{{ item['Title'] }}"
-                            class="h-full w-auto object-contain"
-                            loading="lazy"
-                        />
-                    </div>
-                    <div class="flex flex-1 flex-col space-y-4 p-4">
-                        <div>
-                            <a href="{{ item['Product URL'] }}" class="text-lg font-semibold text-slate-900 hover:underline" target="_blank" rel="noopener">
-                                {{ item["Title"] }}
-                            </a>
-                            <p class="text-sm text-slate-500">{{ item["Brand"] }} • {{ item["Category"] }}</p>
-                        </div>
-                        <div class="flex flex-wrap gap-3 text-sm text-slate-600">
-                            <span class="rounded-full border border-slate-200 px-3 py-1">{{ item["Color"] }}</span>
-                            <span class="rounded-full border border-slate-200 px-3 py-1">{{ item["Price"] }}</span>
-                            <span class="rounded-full border border-slate-200 px-3 py-1">SKU {{ item["SKU"] }}</span>
-                        </div>
-                        <div class="grid gap-2 text-xs text-slate-500">
-                            <p class="font-semibold uppercase tracking-wide text-slate-400">Search Scores</p>
-                            <dl class="grid gap-2">
-                                {% for label in [
-                                    "Final Score",
-                                    "CLIP Text Score",
-                                    "CLIP Packshot Image Score",
-                                    "CLIP Model Image Score",
-                                    "ST Text Score"
-                                ] %}
-                                    {% if item[label] %}
-                                        <div class="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
-                                            <dt class="text-[0.65rem] uppercase tracking-wide text-slate-400">{{ label }}</dt>
-                                            <dd class="text-base font-semibold text-slate-800">{{ item[label] }}</dd>
-                                        </div>
-                                    {% endif %}
-                                {% endfor %}
-                            </dl>
-                        </div>
-                    </div>
-                </article>
-            {% endfor %}
-        </div>
-    {% elif not error %}
-        <div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-10 text-center text-slate-500">
-            <p class="text-base font-medium">No looks yet.</p>
-            <p class="text-sm">Describe a piece or drop an inspiration photo to explore the gallery.</p>
-        </div>
-    {% endif %}
-</section>

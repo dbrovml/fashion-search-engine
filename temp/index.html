@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fashion Search & Chat</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Ensure images fill the container completely */
+        .product-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }
+        /* HTMX indicator styles */
+        .htmx-indicator {
+            opacity: 0 !important;
+            transition: opacity 200ms ease-in;
+        }
+        .htmx-request #loading {
+            opacity: 1 !important;
+        }
+        #loading.htmx-indicator {
+            opacity: 0 !important;
+        }
+        /* Smooth animations for chat and gallery */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        /* Product cards fade in */
+        .product-card {
+            animation: fadeIn 0.3s ease-in;
+        }
+    </style>
+</head>
+<body class="bg-white">
+    <div class="flex h-screen">
+        <!-- Left Half: Chat Window -->
+        {% include "chat.html" %}
+        
+        <!-- Right Half: Product Gallery -->
+        <div class="w-1/2 flex flex-col p-4">
+            <div class="bg-white rounded-lg flex-1 flex flex-col border border-gray-200 overflow-hidden">
+                <!-- Gallery Header -->
+                <div class="p-4 border-b border-gray-200 flex-shrink-0">
+                    <h2 class="text-xl font-semibold text-gray-800">Search Results</h2>
+                </div>
+                
+                <!-- Gallery Grid -->
+                <div id="gallery" class="flex-1 overflow-y-auto p-4 min-h-0">
+                    <div class="grid grid-cols-3 gap-4">
+                        <p class="col-span-3 text-center text-gray-500 mt-8">Start a conversation to see search results</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('image-input');
+        const attachImageBtn = document.getElementById('attach-image-btn');
+        const imagePreview = document.getElementById('image-preview');
+        const previewImg = document.getElementById('preview-img');
+        const previewFilename = document.getElementById('preview-filename');
+        const removeImageBtn = document.getElementById('remove-image-btn');
+        const messageInput = document.getElementById('message-input');
+        const chatForm = document.getElementById('chat-form');
+
+        // Handle image attachment button click
+        attachImageBtn.addEventListener('click', () => {
+            imageInput.click();
+        });
+
+        // Handle image selection
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    previewImg.src = event.target.result;
+                    previewFilename.textContent = file.name;
+                    imagePreview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Handle image removal
+        removeImageBtn.addEventListener('click', () => {
+            imageInput.value = '';
+            imagePreview.classList.add('hidden');
+            previewImg.src = '';
+            previewFilename.textContent = '';
+        });
+
+        // Add chat messages to the chat window when form is submitted
+        chatForm.addEventListener('htmx:beforeRequest', function(event) {
+            const message = messageInput.value.trim();
+            const hasImage = imageInput.files.length > 0;
+            
+            if (!message && !hasImage) {
+                event.preventDefault();
+                return;
+            }
+            
+            // Store image source before clearing
+            const imageSrc = hasImage ? previewImg.src : '';
+            
+            // Store message and image for afterRequest handler
+            messageInput.dataset.pendingMessage = message;
+            messageInput.dataset.pendingImage = hasImage ? 'true' : 'false';
+            messageInput.dataset.pendingImageSrc = imageSrc;
+            
+            // Clear inputs immediately
+            messageInput.value = '';
+            imageInput.value = '';
+            imagePreview.classList.add('hidden');
+            previewImg.src = '';
+            previewFilename.textContent = '';
+            
+            // Add user message immediately to chat
+            const chatMessages = document.getElementById('chat-messages');
+            const messageContainer = document.createElement('div');
+            messageContainer.className = 'flex items-center gap-2 justify-end fade-in';
+            
+            const userMessage = document.createElement('div');
+            userMessage.className = 'bg-white rounded-lg p-3 border border-gray-200 w-fit max-w-[80%] text-right';
+            
+            let messageContent = '';
+            if (hasImage) {
+                messageContent += `<div class="text-right mb-2"><img src="${imageSrc}" alt="Uploaded image" class="max-w-full h-auto rounded-lg inline-block"></div>`;
+            }
+            if (message) {
+                messageContent += `<p class="text-black">${message}</p>`;
+            }
+            userMessage.innerHTML = messageContent;
+            
+            const userAvatar = document.createElement('div');
+            userAvatar.className = 'w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-green-900';
+            const userAvatarImg = document.createElement('img');
+            userAvatarImg.src = '/static/agent-avatar.jpg';
+            userAvatarImg.alt = 'User';
+            userAvatarImg.className = 'w-full h-full object-cover rounded-full';
+            userAvatar.appendChild(userAvatarImg);
+            
+            messageContainer.appendChild(userMessage);
+            messageContainer.appendChild(userAvatar);
+            chatMessages.appendChild(messageContainer);
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Create or reuse thinking indicator and show it at bottom
+            let thinkingIndicator = document.getElementById('thinking-indicator');
+            if (!thinkingIndicator) {
+                // Create thinking indicator if it doesn't exist
+                thinkingIndicator = document.createElement('div');
+                thinkingIndicator.id = 'thinking-indicator';
+                thinkingIndicator.style.opacity = '0';
+                thinkingIndicator.style.transition = 'opacity 200ms ease-in';
+                thinkingIndicator.className = 'flex items-center gap-2';
+                thinkingIndicator.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-pink-800">
+                        <img src="/static/agent-avatar.jpg" alt="Agent" class="w-full h-full object-cover rounded-full">
+                    </div>
+                    <div class="bg-white rounded-lg p-3 border border-gray-200 w-fit">
+                        <div class="flex items-center gap-2">
+                            <div class="flex gap-1">
+                                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+                                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+                                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+                            </div>
+                            <span class="text-sm text-black">Thinking...</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Move to bottom and show it
+            chatMessages.appendChild(thinkingIndicator);
+            thinkingIndicator.style.opacity = '1';
+            // Scroll to show thinking indicator
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        });
+
+        chatForm.addEventListener('htmx:afterRequest', function(event) {
+            // Clean up dataset
+            delete messageInput.dataset.pendingMessage;
+            delete messageInput.dataset.pendingImage;
+            delete messageInput.dataset.pendingImageSrc;
+            
+            // Hide thinking indicator
+            const thinkingIndicator = document.getElementById('thinking-indicator');
+            if (thinkingIndicator) {
+                thinkingIndicator.style.opacity = '0';
+            }
+        });
+    </script>
+</body>
+</html>
+
