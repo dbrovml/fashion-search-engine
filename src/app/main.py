@@ -4,10 +4,12 @@ from typing import Optional
 from typing import AsyncGenerator
 
 from PIL import Image
-from fastapi import FastAPI, Request
-from fastapi.params import File, Form, UploadFile
+from fastapi import FastAPI, Request, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
+from src.config import STATIC_DIR, TEMPLATE_DIR
 from src.search.engine import Engine
 
 
@@ -18,10 +20,27 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 
 app = FastAPI(name="FashionSearch", lifespan=lifespan)
+templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+def _empty_context():
+    return {
+        "items": [],
+        "query": {"Query Text": None, "Query Image": None},
+        "filters": None,
+        "error": None,
+    }
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    context = {"request": request, **_empty_context()}
+    return templates.TemplateResponse("index.html", context)
 
 
 @app.post("/search", response_class=HTMLResponse)
-def search(
+async def search(
     request: Request,
     q_text: Optional[str] = Form(None),
     q_image: Optional[UploadFile] = File(None),
@@ -29,15 +48,41 @@ def search(
     engine: Engine = app.state.engine
 
     if not q_text and (not q_image or not q_image.filename):
-        return {"error": "Query or image is required"}
+        context = {
+            "request": request,
+            **_empty_context(),
+            "error": "Enter a description or upload an image to search.",
+        }
+        return templates.TemplateResponse(
+            "partials/results.html",
+            context,
+        )
 
     image = None
     if q_image and q_image.filename:
-        content = q_image.read()
+        content = await q_image.read()
         try:
             image = Image.open(BytesIO(content)).convert("RGB")
         except Exception as e:
-            return {"error": f"Invalid image: {e}"}
+            context = {
+                "request": request,
+                **_empty_context(),
+                "error": f"Invalid image: {e}",
+            }
+            return templates.TemplateResponse(
+                "partials/results.html",
+                context,
+            )
 
     output = engine.run(q_text=q_text, q_image=image)
-    return output
+    context = {
+        "request": request,
+        "items": output.get("Items", []),
+        "query": output.get("Query"),
+        "filters": output.get("Applied Filters"),
+        "error": None,
+    }
+    return templates.TemplateResponse(
+        "partials/results.html",
+        context,
+    )
