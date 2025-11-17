@@ -15,6 +15,9 @@ DATA_DIR = PROJECT_ROOT / "data"
 ATTRIBUTE_DIR = DATA_DIR / "attributes"
 IMAGE_DIR = DATA_DIR / "images"
 
+TEMPLATE_DIR = FRONTEND_DIR / "templates"
+STATIC_DIR = FRONTEND_DIR / "static"
+
 for dir_ in [
     SRC_DIR,
     FRONTEND_DIR,
@@ -23,6 +26,8 @@ for dir_ in [
     DATA_DIR,
     ATTRIBUTE_DIR,
     IMAGE_DIR,
+    TEMPLATE_DIR,
+    STATIC_DIR,
 ]:
     dir_.mkdir(parents=True, exist_ok=True)
 

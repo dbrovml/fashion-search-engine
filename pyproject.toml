@@ -20,4 +20,5 @@ dependencies = [
     "openai>=2.8.0",
     "fastapi>=0.121.2",
     "uvicorn>=0.38.0",
+    "python-multipart>=0.0.20",
 ]
