@@ -95,10 +95,7 @@ def embed(batch_size: int = 2048) -> None:
                 sku_payload[sku][f"clip_{key}"] = vector
 
         payload = list(sku_payload.values())
-        # Use larger batch size for DB operations to reduce commit overhead
         upsert_to_features(payload, batch_size=256)
-
-    typer.echo("All batches processed successfully!")
 
 
 if __name__ == "__main__":

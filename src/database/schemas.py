@@ -179,27 +179,8 @@ def upsert_to_features(
     if not isinstance(records, list):
         records = [records]
 
-    prepared_records = []
-    for record in records:
-        prepared_record = {"sku": record["sku"]}
-        for k, v in record.items():
-            if k != "sku":
-                if isinstance(v, np.ndarray):
-                    v = v.tolist()
-                prepared_record[k] = v
-        prepared_records.append(prepared_record)
-
-    normalized = []
-    for record in prepared_records:
-        normalized.append(
-            {
-                "sku": record["sku"],
-                "clip_image1": record.get("clip_image1"),
-                "clip_image2": record.get("clip_image2"),
-                "clip_text": record.get("clip_text"),
-                "st_text": record.get("st_text"),
-            }
-        )
+    if not records:
+        return
 
     upsert_sql = """
         INSERT INTO item.features
@@ -207,30 +188,71 @@ def upsert_to_features(
         VALUES %s
         ON CONFLICT (sku) DO UPDATE SET
             updated = CURRENT_TIMESTAMP,
-            clip_image1  = COALESCE(EXCLUDED.clip_image1, item.features.clip_image1),
-            clip_image2  = COALESCE(EXCLUDED.clip_image2, item.features.clip_image2),
-            clip_text  = COALESCE(EXCLUDED.clip_text, item.features.clip_text),
-            st_text = COALESCE(EXCLUDED.st_text, item.features.st_text)
+            clip_image1 = EXCLUDED.clip_image1,
+            clip_image2 = EXCLUDED.clip_image2,
+            clip_text = EXCLUDED.clip_text,
+            st_text = EXCLUDED.st_text
     """
 
     with Manager() as db:
-        for batch in tqdm(
-            batched(normalized, batch_size),
-            desc="Upserting features",
-            total=len(normalized) // batch_size,
+        # Optimize for bulk operations
+        db.cursor.execute("SET work_mem = '256MB'")
+        db.cursor.execute("SET maintenance_work_mem = '512MB'")
+        db.cursor.execute("SET synchronous_commit = off")
+
+        total_batches = (len(records) + batch_size - 1) // batch_size
+        commit_every = 5  # Commit every 5 batches to reduce overhead
+
+        for batch_idx, batch in enumerate(
+            tqdm(
+                batched(records, batch_size),
+                desc="Upserting features",
+                total=total_batches,
+            ),
+            start=1,
         ):
-            values = [
-                (
-                    row["sku"],
-                    row["clip_image1"],
-                    row["clip_image2"],
-                    row["clip_text"],
-                    row["st_text"],
+            values = []
+            for record in batch:
+                clip_image1 = record.get("clip_image1")
+                clip_image2 = record.get("clip_image2")
+                clip_text = record.get("clip_text")
+                st_text = record.get("st_text")
+
+                values.append(
+                    (
+                        record["sku"],
+                        (
+                            clip_image1.tolist()
+                            if isinstance(clip_image1, np.ndarray)
+                            else clip_image1
+                        ),
+                        (
+                            clip_image2.tolist()
+                            if isinstance(clip_image2, np.ndarray)
+                            else clip_image2
+                        ),
+                        (
+                            clip_text.tolist()
+                            if isinstance(clip_text, np.ndarray)
+                            else clip_text
+                        ),
+                        (
+                            st_text.tolist()
+                            if isinstance(st_text, np.ndarray)
+                            else st_text
+                        ),
+                    )
                 )
-                for row in batch
-            ]
-            execute_values(db.cursor, upsert_sql, values)
-            db.conn.commit()
+
+            execute_values(db.cursor, upsert_sql, values, page_size=batch_size)
+
+            # Commit every N batches or at the end
+            if batch_idx % commit_every == 0 or batch_idx == total_batches:
+                db.conn.commit()
+
+        # Restore settings
+        db.cursor.execute("SET synchronous_commit = on")
+        db.conn.commit()
 
 
 def upsert_to_colors(records: dict[str, Any] | Sequence[dict[str, Any]]) -> None:
