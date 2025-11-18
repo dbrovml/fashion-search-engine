@@ -2,6 +2,8 @@
 
 A multimodal fashion search engine that lets you find clothing items using natural language queries or by uploading an image. Built with vector embeddings, it combines CLIP and Sentence Transformers to power semantic search across a catalog of fashion products.
 
+![Fashion Search Demo](./images/demo.png)
+
 ## How to use
 
 You can search for fashion items in three ways:
