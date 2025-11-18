@@ -8,11 +8,6 @@ env_path = Path(__file__).parent.parent / ".env"
 if env_path.exists():
     load_dotenv(dotenv_path=env_path)
 
-# Render injects secrets into the /etc/secrets/.env file
-render_env_path = "/etc/secrets/.env"
-if os.path.exists(render_env_path):
-    load_dotenv(render_env_path)
-
 PROJECT_ROOT = Path(__file__).parent.parent
 
 SRC_DIR = PROJECT_ROOT / "src"
@@ -42,18 +37,15 @@ for dir_ in [
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "local")
 
-POSTGRES_DB_URL = os.getenv("DATABASE_URL")  # <- render should inject this
-
-if not POSTGRES_DB_URL:
-    POSTGRES_HOST = os.getenv("POSTGRES_HOST")
-    POSTGRES_DB = os.getenv("POSTGRES_DB")
-    POSTGRES_USER = os.getenv("POSTGRES_USER")
-    POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
-    POSTGRES_PORT = os.getenv("POSTGRES_PORT")
-    if ENVIRONMENT == "lambda":
-        POSTGRES_HOST = "localhost"
-        POSTGRES_PORT = "15432"
-    POSTGRES_DB_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT")
+if ENVIRONMENT == "lambda":
+    POSTGRES_HOST = "localhost"
+    POSTGRES_PORT = "15432"
+POSTGRES_DB_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 

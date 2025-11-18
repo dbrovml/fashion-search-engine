@@ -36,7 +36,7 @@ app.add_middleware(
 )
 
 
-@app.get("/")
+@app.get("/health")
 def health() -> dict[str, str]:
     """Return the health of the application."""
     return {"status": "ok"}
