@@ -9,9 +9,9 @@ if env_path.exists():
     load_dotenv(dotenv_path=env_path)
 
 # Render injects secrets into the /etc/secrets/.env file
-secret_env_path = "/etc/secrets/.env"
-if os.path.exists(secret_env_path):
-    load_dotenv(secret_env_path)
+render_env_path = "/etc/secrets/.env"
+if os.path.exists(render_env_path):
+    load_dotenv(render_env_path)
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
