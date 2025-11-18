@@ -1,0 +1,1 @@
+docker exec -t fashionsearch-db pg_dump -U postgres -d fashionsearch > data/local_dump.sql
