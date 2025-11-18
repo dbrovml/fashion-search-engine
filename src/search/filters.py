@@ -47,7 +47,8 @@ class Extractor:
                 {"role": "user", "content": text},
             ],
             text_format=Filters,
-            temperature=0,
+            temperature=0.0,
+            top_p=0,
         ).output_parsed
 
     def _get_system_prompt(self):
@@ -82,8 +83,7 @@ class Extractor:
             **brand**: extract brand name and match to available brands list above
             Match priority (in order):
                 - Exact match: "nike" -> "Nike" or "nike"
-                - Starts with extracted name: "ralph lauren" -> "Ralph Lauren Polo"
-                - Contains extracted name as main part (fallback)
+            - Always put extractions to lower case before matching
             - Prefer shorter brand names (main brand over sub-brand)
             - Must match to a value in the available brands list
             - If no good match found, return None

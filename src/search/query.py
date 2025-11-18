@@ -68,8 +68,8 @@ class Query:
         q_text: str,
         k: int = 3,
         filters: Optional[Filters] = None,
-        clip_weight: float = 0.15,
-        st_weight: float = 0.85,
+        clip_weight: float = 0.50,
+        st_weight: float = 0.50,
     ) -> list[ResultItem]:
         """Search catalog items using text embeddings."""
         clip_emb = self.clip_embedder.encode_texts([q_text])[0]
@@ -84,12 +84,12 @@ class Query:
             WITH scores AS (
                 SELECT
                     F.sku,
-                    1 - (F.clip_text <=> '{clip_v}'::vector) as clip_score,
+                    1 - (F.clip_image1 <=> '{clip_v}'::vector) as clip_score,
                     1 - (F.st_text <=> '{st_v}'::vector) as st_score
                 FROM 
                     item.features as F
                 WHERE 1=1
-                    AND F.clip_text IS NOT NULL
+                    AND F.clip_image1 IS NOT NULL
                     AND F.st_text is NOT NULL
             )
             , weighted AS (
