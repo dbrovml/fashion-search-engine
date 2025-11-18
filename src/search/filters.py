@@ -47,6 +47,7 @@ class Extractor:
                 {"role": "user", "content": text},
             ],
             text_format=Filters,
+            temperature=0,
         ).output_parsed
 
     def _get_system_prompt(self):
