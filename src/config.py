@@ -4,7 +4,14 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+env_path = Path(__file__).parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
+
+# Render injects secrets into the /etc/secrets/.env file
+secret_env_path = "/etc/secrets/.env"
+if os.path.exists(secret_env_path):
+    load_dotenv(secret_env_path)
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
@@ -43,7 +50,7 @@ if not POSTGRES_DB_URL:
     POSTGRES_USER = os.getenv("POSTGRES_USER")
     POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
     POSTGRES_PORT = os.getenv("POSTGRES_PORT")
-    if ENVIRONMENT == "remote":
+    if ENVIRONMENT == "lambda":
         POSTGRES_HOST = "localhost"
         POSTGRES_PORT = "15432"
     POSTGRES_DB_URL = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
