@@ -69,5 +69,5 @@ The engine works in a few stages:
 - [Learning Transferable Visual Models From Natural Language Supervision](https://arxiv.org/abs/2103.00020)
 - [Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks](https://arxiv.org/abs/1908.10084)
 - [MiniLM: Deep Self-Attention Distillation for Task-Agnostic Compression of Pre-Trained Transformers](arxiv.org/abs/2002.10957)
-- [laion/CLIP-ViT-B-16-laion2B-s34B-b88K](https://huggingface.co/laion/CLIP-ViT-B-16-laion2B-s34B-b88K)
-- [all-MiniLM-L6-v2](https://www.sbert.net/)
+- [CLIP (laion/CLIP-ViT-B-16-laion2B-s34B-b88K)](https://huggingface.co/laion/CLIP-ViT-B-16-laion2B-s34B-b88K)
+- [Sentence transformer (all-MiniLM-L6-v2)](https://www.sbert.net/)
