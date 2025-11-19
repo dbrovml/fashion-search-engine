@@ -27,6 +27,17 @@ app = FastAPI(name="FashionSearch", lifespan=lifespan)
 templates = Jinja2Templates(directory=str(TEMPLATE_DIR))
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
+
+@app.middleware("http")
+async def disable_client_cache(request: Request, call_next):
+    """Ensure front-end responses are never cached by the browser."""
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

@@ -14,6 +14,7 @@
                     hx-encoding="multipart/form-data"
                     enctype="multipart/form-data"
                     class="space-y-4"
+                    autocomplete="off"
                 >
                     <div>
                         <label for="q_text" class="block text-sm font-semibold uppercase tracking-wide text-slate-600">
@@ -24,6 +25,10 @@
                             id="q_text"
                             name="q_text"
                             placeholder="e.g. emerald green satin dress"
+                            autocomplete="off"
+                            autocorrect="off"
+                            autocapitalize="off"
+                            spellcheck="false"
                             class="mt-2 w-full rounded-xl border-slate-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                         />
                         <p class="mt-2 text-xs text-slate-500">
@@ -113,6 +118,27 @@ document.addEventListener("DOMContentLoaded", function () {
             imageInput.value = "";
         }
     };
+
+    const resetSearchFields = () => {
+        if (searchForm) {
+            searchForm.reset();
+        }
+        if (searchInput) {
+            searchInput.value = "";
+        }
+        if (imageInput) {
+            imageInput.value = "";
+        }
+        clearUploadPreview();
+    };
+
+    resetSearchFields();
+
+    window.addEventListener("pageshow", (event) => {
+        if (event.persisted) {
+            resetSearchFields();
+        }
+    });
 
     const showUploadPreview = (dataUrl) => {
         if (!uploadPreview || !uploadPreviewImg) return;
